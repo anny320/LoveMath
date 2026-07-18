@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love Math — The Romance Calculator</title>
+<meta name="description" content="Use real math — the Drake equation, the 37% rule, and relationship science — to find out how many potential partners are out there, when to commit, and who's actually The One.">
+<meta property="og:title" content="Love Math — The Romance Calculator">
+<meta property="og:description" content="How many soulmates are in your city? When should you stop swiping? Let the math decide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#251629;
+  --blush:#FFF4EE;
+  --flame:#FF4F79;
+  --butter:#FFC759;
+  --lilac:#C9A6FF;
+  --card:#FFFFFF;
+  --ink-soft:rgba(37,22,41,.62);
+  --line:rgba(37,22,41,.14);
+  --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Instrument Sans',sans-serif;
+  background:var(--blush);
+  color:var(--ink);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--butter)}
+
+/* ---------- header ---------- */
+header{
+  max-width:680px;margin:0 auto;padding:48px 20px 8px;text-align:center;
+}
+.eyebrow{
+  font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--flame);font-weight:700;
+}
+h1{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+  font-size:clamp(42px,9vw,72px);line-height:1.02;letter-spacing:-.02em;
+  margin:10px 0 14px;
+}
+h1 .heart{display:inline-block;color:var(--flame);animation:beat 1.6s ease-in-out infinite;transform-origin:center}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.18)}24%{transform:scale(1)}}
+.sub{color:var(--ink-soft);font-size:17px;max-width:520px;margin:0 auto}
+
+/* ---------- tabs ---------- */
+nav{
+  position:sticky;top:0;z-index:50;background:var(--blush);
+  padding:16px 12px 12px;display:flex;justify-content:center;gap:8px;
+  border-bottom:1.5px solid var(--line);
+}
+.tab{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:15px;
+  padding:10px 16px;border-radius:999px;border:1.5px solid var(--ink);
+  background:transparent;color:var(--ink);cursor:pointer;transition:all .18s;
+  white-space:nowrap;
+}
+.tab:hover{background:rgba(37,22,41,.06)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--blush)}
+.tab:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--flame);outline-offset:2px}
+
+/* ---------- layout ---------- */
+main{max-width:680px;margin:0 auto;padding:28px 20px 80px}
+section[hidden]{display:none}
+.card{
+  background:var(--card);border:1.5px solid var(--ink);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px;box-shadow:5px 5px 0 rgba(37,22,41,.9);
+}
+h2{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+  font-size:clamp(26px,5.4vw,34px);letter-spacing:-.01em;line-height:1.1;margin-bottom:6px;
+}
+.lede{color:var(--ink-soft);font-size:15.5px;margin-bottom:6px}
+.factlet{
+  font-size:13.5px;color:var(--ink-soft);background:rgba(201,166,255,.18);
+  border-left:3px solid var(--lilac);padding:10px 12px;border-radius:0 10px 10px 0;margin:14px 0 0;
+}
+
+/* ---------- sliders ---------- */
+.field{margin:22px 0}
+.field label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:600;font-size:15px;margin-bottom:8px}
+.field .val{font-family:'Space Mono',monospace;font-weight:700;color:var(--flame);font-size:15px;white-space:nowrap}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:6px}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+  background:linear-gradient(to right,var(--flame) 0%,var(--flame) var(--fill,50%),rgba(37,22,41,.14) var(--fill,50%));
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--card);border:3px solid var(--ink);box-shadow:2px 2px 0 rgba(37,22,41,.85);
+  cursor:grab;transition:transform .12s;
+}
+input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.12)}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;background:var(--card);
+  border:3px solid var(--ink);box-shadow:2px 2px 0 rgba(37,22,41,.85);cursor:grab;
+}
+input[type=number],input[type=text]{
+  font-family:'Space Mono',monospace;font-size:16px;padding:10px 12px;
+  border:1.5px solid var(--ink);border-radius:12px;width:100%;background:var(--card);color:var(--ink);
+}
+
+/* ---------- signature: the live equation ---------- */
+.equation{
+  font-family:'Space Mono',monospace;font-size:13.5px;line-height:2;
+  background:var(--ink);color:var(--blush);border-radius:var(--radius);
+  padding:20px 22px;margin:6px 0 20px;overflow-x:auto;white-space:nowrap;
+  border:1.5px solid var(--ink);box-shadow:5px 5px 0 var(--flame);
+}
+.equation .op{color:var(--butter)}
+.equation .lbl{color:rgba(255,244,238,.45);font-size:11px;display:block;line-height:1}
+.eq-term{display:inline-block;text-align:center;margin-right:2px}
+.equation .result{color:var(--flame);font-weight:700;font-size:16px}
+
+/* ---------- big result ---------- */
+.big-result{
+  text-align:center;padding:28px 20px;background:var(--card);
+  border:1.5px solid var(--ink);border-radius:var(--radius);box-shadow:5px 5px 0 rgba(37,22,41,.9);
+  margin-bottom:20px;
+}
+.big-num{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;
+  font-size:clamp(52px,13vw,88px);line-height:1;color:var(--flame);letter-spacing:-.03em;
+}
+.big-label{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-top:8px}
+.big-quip{font-size:15.5px;margin-top:14px;max-width:440px;margin-left:auto;margin-right:auto}
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:15.5px;
+  padding:13px 22px;border-radius:14px;border:1.5px solid var(--ink);cursor:pointer;
+  transition:transform .12s, box-shadow .12s;box-shadow:3px 3px 0 rgba(37,22,41,.9);
+}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 rgba(37,22,41,.9)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(37,22,41,.9)}
+.btn-flame{background:var(--flame);color:#fff}
+.btn-butter{background:var(--butter);color:var(--ink)}
+.btn-ghost{background:var(--card);color:var(--ink)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn-sm{font-size:13.5px;padding:8px 14px;border-radius:11px}
+
+/* ---------- 37% timeline ---------- */
+.timeline{margin:20px 0 6px}
+.tl-bar{position:relative;height:44px;border-radius:12px;overflow:hidden;border:1.5px solid var(--ink);display:flex}
+.tl-explore{background:var(--lilac);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;color:var(--ink);transition:width .5s ease}
+.tl-commit{background:var(--butter);flex:1;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;color:var(--ink)}
+.tl-marker{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:12px;color:var(--ink-soft);margin-top:6px}
+.switch-age{
+  text-align:center;margin:18px 0 4px;font-family:'Bricolage Grotesque',sans-serif;
+}
+.switch-age .n{font-size:clamp(40px,10vw,64px);font-weight:800;color:var(--flame);line-height:1;letter-spacing:-.02em}
+.switch-age .cap{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* ---------- scorer ---------- */
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{
+  font-family:'Space Mono',monospace;font-size:12.5px;font-weight:700;
+  background:rgba(255,79,121,.12);border:1.5px solid var(--flame);color:var(--flame);
+  padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;
+}
+.chip button{background:none;border:none;color:var(--flame);font-size:15px;cursor:pointer;line-height:1;padding:0}
+.db-toggle{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:14.5px}
+.db-toggle input{width:20px;height:20px;accent-color:var(--flame);cursor:pointer;flex-shrink:0}
+.person-card{position:relative}
+.person-card h3{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800}
+.verdict{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;margin-top:4px;
+}
+.score-bar{height:12px;border-radius:99px;background:rgba(37,22,41,.1);overflow:hidden;margin:10px 0 4px;border:1.5px solid var(--ink)}
+.score-fill{height:100%;background:var(--flame);transition:width .6s ease;border-radius:99px}
+.roster-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 0;border-bottom:1.5px dashed var(--line);
+}
+.roster-item:last-child{border-bottom:none}
+.roster-name{font-weight:600;font-size:16px}
+.roster-score{font-family:'Space Mono',monospace;font-weight:700;color:var(--flame)}
+.roster-verdict{font-size:13px;color:var(--ink-soft)}
+.tiny-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:13px;text-decoration:underline;padding:4px}
+.empty{text-align:center;color:var(--ink-soft);font-size:14.5px;padding:18px 0}
+
+/* ---------- footer ---------- */
+footer{
+  max-width:680px;margin:0 auto;padding:0 20px 60px;text-align:center;
+  color:var(--ink-soft);font-size:13px;
+}
+footer .fine{margin-top:8px;font-size:12px}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:var(--blush);font-family:'Space Mono',monospace;font-size:13px;
+  padding:12px 20px;border-radius:12px;transition:transform .3s ease;z-index:100;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+@media (max-width:480px){
+  .card{padding:18px}
+  nav{gap:6px}
+  .tab{font-size:13.5px;padding:9px 12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">a romance calculator</p>
+  <h1>Love, but make it math <span class="heart">♥</span></h1>
+  <p class="sub">The Drake equation, the 37% rule, and decades of relationship research — pointed at your love life. Slightly unserious. Surprisingly useful.</p>
+</header>
+
+<nav role="tablist" aria-label="Calculators">
+  <button class="tab" role="tab" aria-selected="true" data-tab="odds">Your Odds</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="commit">When to Commit</button>
+  <button class="tab" role="tab" aria-selected="false" data-tab="score">Score Your Dates</button>
+</nav>
+
+<main>
+
+<!-- ============ TAB 1: ODDS ============ -->
+<section id="tab-odds" role="tabpanel">
+  <div class="card">
+    <h2>How many people out there are for you?</h2>
+    <p class="lede">In 2010, economist Peter Backus used the Drake equation — the one astronomers use to estimate alien civilisations — to count his potential girlfriends. We're doing the same for you, with better defaults and more optimism.</p>
+
+    <div class="field">
+      <label for="o-pop">People in your dating pool (city / region) <span class="val" id="o-pop-v">5,000,000</span></label>
+      <input type="range" id="o-pop" min="50000" max="20000000" step="50000" value="5000000">
+      <p class="hint">Your city, plus anywhere you'd realistically date.</p>
+    </div>
+    <div class="field">
+      <label for="o-gender">% who are the gender(s) you date <span class="val" id="o-gender-v">50%</span></label>
+      <input type="range" id="o-gender" min="1" max="100" value="50">
+    </div>
+    <div class="field">
+      <label for="o-age">% in your age range <span class="val" id="o-age-v">20%</span></label>
+      <input type="range" id="o-age" min="1" max="100" value="20">
+      <p class="hint">A 10-year window is usually 15–25% of a city.</p>
+    </div>
+    <div class="field">
+      <label for="o-single">% of those who are single <span class="val" id="o-single-v">40%</span></label>
+      <input type="range" id="o-single" min="1" max="100" value="40">
+    </div>
+    <div class="field">
+      <label for="o-attract">% you'd find attractive <span class="val" id="o-attract-v">15%</span></label>
+      <input type="range" id="o-attract" min="1" max="100" value="15">
+      <p class="hint">Be honest, not brutal. Attraction grows with familiarity.</p>
+    </div>
+    <div class="field">
+      <label for="o-vibe">% who'd share your values &amp; vibe <span class="val" id="o-vibe-v">30%</span></label>
+      <input type="range" id="o-vibe" min="1" max="100" value="30">
+      <p class="hint">Research says shared values beat shared hobbies, every time.</p>
+    </div>
+    <div class="field">
+      <label for="o-mutual">% who'd like you back <span class="val" id="o-mutual-v">20%</span></label>
+      <input type="range" id="o-mutual" min="1" max="100" value="20">
+      <p class="hint">You're more likeable than your inner critic says. Nudge it up.</p>
+    </div>
+  </div>
+
+  <div class="equation" id="odds-equation" aria-live="polite"></div>
+
+  <div class="big-result">
+    <div class="big-num" id="odds-num">0</div>
+    <div class="big-label">potential partners out there</div>
+    <p class="big-quip" id="odds-quip"></p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-flame" id="odds-share">Share my odds ♥</button>
+  </div>
+
+  <p class="factlet"><strong>The optimist's footnote:</strong> Backus originally got 26 women in all of London — then met his wife anyway. The equation counts strangers; love happens between people who stop being strangers. Your real job is just meeting more of your number.</p>
+</section>
+
+<!-- ============ TAB 2: 37% RULE ============ -->
+<section id="tab-commit" role="tabpanel" hidden>
+  <div class="card">
+    <h2>When should you stop looking?</h2>
+    <p class="lede">Mathematicians solved this. It's called optimal stopping: spend the first <strong>37%</strong> of your search just exploring — no commitments, only calibrating. After that, commit to the first person who's better than everyone you met before. It's the strategy with the highest chance of landing your best option.</p>
+
+    <div class="field">
+      <label for="c-now">Your age now <span class="val" id="c-now-v">28</span></label>
+      <input type="range" id="c-now" min="18" max="60" value="28">
+    </div>
+    <div class="field">
+      <label for="c-settle">Age you'd like to be settled by <span class="val" id="c-settle-v">35</span></label>
+      <input type="range" id="c-settle" min="19" max="70" value="35">
+    </div>
+    <div class="field">
+      <label for="c-rate">Serious prospects you meet per year <span class="val" id="c-rate-v">3</span></label>
+      <input type="range" id="c-rate" min="1" max="20" value="3">
+      <p class="hint">People you'd actually go on multiple dates with — not every match.</p>
+    </div>
+  </div>
+
+  <div class="equation" id="commit-equation" aria-live="polite"></div>
+
+  <div class="card">
+    <div class="switch-age">
+      <div class="n" id="c-switch-age">30.6</div>
+      <div class="cap">your switch-to-commit age</div>
+    </div>
+    <div class="timeline">
+      <div class="tl-bar">
+        <div class="tl-explore" id="tl-explore" style="width:37%">EXPLORE</div>
+        <div class="tl-commit">COMMIT</div>
+      </div>
+      <div class="tl-marker"><span id="tl-start">28</span><span id="tl-mid">30.6</span><span id="tl-end">35</span></div>
+    </div>
+    <p class="big-quip" id="commit-quip" style="text-align:center"></p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-flame" id="commit-share">Share my switch age ♥</button>
+  </div>
+
+  <p class="factlet"><strong>How to use it like a human:</strong> the explore phase isn't wasted time — it's how you learn what "great for me" actually feels like. And the rule's real lesson is gentler than it sounds: past your switch point, stop chasing perfect. When someone beats your benchmark, that's not settling. That's the answer.</p>
+</section>
+
+<!-- ============ TAB 3: SCORER ============ -->
+<section id="tab-score" role="tabpanel" hidden>
+  <div class="card">
+    <h2>Score the people you're dating</h2>
+    <p class="lede">Built on what actually predicts lasting love — deep friendship, how you repair fights, shared values, feeling safe — not height, star signs, or how good their photos are.</p>
+
+    <div class="field" style="margin-bottom:6px">
+      <label for="db-input" style="margin-bottom:8px">Your dealbreakers (up to 5)</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="db-input" placeholder="e.g. wants kids, doesn't smoke…" maxlength="40">
+        <button class="btn btn-butter btn-sm" id="db-add" style="flex-shrink:0">Add</button>
+      </div>
+      <div class="chip-row" id="db-chips"></div>
+      <p class="hint">Keep it to true non-negotiables. Research says 3–5 max — a 20-item checklist filters out great people over trivia.</p>
+    </div>
+  </div>
+
+  <div class="card person-card">
+    <h3 id="score-title">Score someone</h3>
+    <div class="field" style="margin-top:14px">
+      <label for="p-name" style="margin-bottom:8px">Their name (or codename 👀)</label>
+      <input type="text" id="p-name" placeholder="e.g. Coffee Shop Chris" maxlength="30">
+    </div>
+
+    <div id="db-checklist"></div>
+    <div id="dim-sliders"></div>
+
+    <div class="score-bar"><div class="score-fill" id="live-fill" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span class="roster-score" id="live-score" style="font-size:22px">0/100</span>
+      <span class="verdict" id="live-verdict"></span>
+    </div>
+
+    <div class="btn-row" style="margin-top:18px;justify-content:flex-start">
+      <button class="btn btn-flame" id="p-save">Save to roster</button>
+      <button class="btn btn-ghost" id="p-reset">Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:24px">The roster</h2>
+    <p class="lede">Ranked by the math. Your heart gets the final vote.</p>
+    <div id="roster"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-butter" id="roster-share">Share my roster (names hidden) ♥</button>
+    </div>
+  </div>
+
+  <p class="factlet"><strong>Why these categories:</strong> longitudinal studies of couples (most famously the Gottman Lab's) keep finding the same predictors — quality of friendship, how conflict gets repaired, shared meaning, and emotional safety. Chemistry matters, but it's the price of entry, not the whole game.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>Made with ♥ and an unreasonable amount of multiplication.</p>
+  <p class="fine">For fun and gentle self-reflection — not actual science, therapy, or a substitute for meeting people. The math is real; the love part is up to you.</p>
+</footer>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+/* ---------- storage: localStorage with in-memory fallback ---------- */
+const mem = {};
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return mem[k] ?? null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ mem[k]=v; } }
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString('en-US');
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200);
+}
+async function share(text){
+  if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){} }
+  try{ await navigator.clipboard.writeText(text); toast('Copied — go paste it somewhere ♥'); }
+  catch(e){ toast('Could not copy, sorry!'); }
+}
+function paintRange(el){
+  const pct = (el.value - el.min)/(el.max - el.min)*100;
+  el.style.setProperty('--fill', pct+'%');
+}
+document.querySelectorAll('input[type=range]').forEach(r=>{
+  paintRange(r);
+  r.addEventListener('input',()=>paintRange(r));
+});
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn));
+    document.querySelectorAll('main section').forEach(s=>s.hidden = (s.id !== 'tab-'+btn.dataset.tab));
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+
+/* ---------- count-up animation ---------- */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(el, target){
+  if(reduceMotion){ el.textContent = fmt(target); return; }
+  const start = Number(el.dataset.cur||0), dur=500, t0=performance.now();
+  function step(t){
+    const p = Math.min((t-t0)/dur,1), ease = 1-Math.pow(1-p,3);
+    el.textContent = fmt(Math.round(start + (target-start)*ease));
+    if(p<1) requestAnimationFrame(step); else el.dataset.cur = target;
+  }
+  requestAnimationFrame(step);
+}
+
+/* ================= TAB 1: ODDS ================= */
+const oddsFields = [
+  {id:'o-pop',   lbl:'pool',    fmt:v=>fmt(v)},
+  {id:'o-gender',lbl:'gender',  fmt:v=>'.'+String(v).padStart(2,'0')},
+  {id:'o-age',   lbl:'age',     fmt:v=>'.'+String(v).padStart(2,'0')},
+  {id:'o-single',lbl:'single',  fmt:v=>'.'+String(v).padStart(2,'0')},
+  {id:'o-attract',lbl:'spark',  fmt:v=>'.'+String(v).padStart(2,'0')},
+  {id:'o-vibe',  lbl:'values',  fmt:v=>'.'+String(v).padStart(2,'0')},
+  {id:'o-mutual',lbl:'mutual',  fmt:v=>'.'+String(v).padStart(2,'0')},
+];
+function oddsQuip(n){
+  if(n===0) return "Zero?! Loosen one slider — even Backus wasn't this strict, and he married someone.";
+  if(n<10) return `A rare-vintage situation. ${n} people is small — but you only need one, and rare things are worth hunting.`;
+  if(n<100) return `${fmt(n)} people — enough to fill a decent wedding. One of the guests could be yours.`;
+  if(n<1000) return `${fmt(n)} people — an entire packed theatre of possibilities. Statistically, someone in row F is very your type.`;
+  if(n<10000) return `${fmt(n)} people — a whole stadium section is out there for you. Maybe say yes to that thing this weekend?`;
+  return `${fmt(n)} people?! That's a small town entirely populated by your potential partners. The math says your problem is meeting, not existing.`;
+}
+function calcOdds(save=true){
+  let n = 1;
+  const parts = oddsFields.map((f,i)=>{
+    const v = Number($(f.id).value);
+    $(f.id+'-v').textContent = i===0 ? fmt(v) : v+'%';
+    n *= (i===0 ? v : v/100);
+    return `<span class="eq-term"><span class="lbl">${f.lbl}</span>${f.fmt(v)}</span>`;
+  });
+  const total = Math.round(n);
+  $('odds-equation').innerHTML = parts.join('<span class="op"> × </span>') +
+    '<span class="op"> = </span><span class="result">'+fmt(total)+'</span>';
+  countUp($('odds-num'), total);
+  $('odds-quip').textContent = oddsQuip(total);
+  if(save) store.set('lm_odds', oddsFields.map(f=>$(f.id).value));
+}
+(store.get('lm_odds')||[]).forEach((v,i)=>{ if(oddsFields[i]){ $(oddsFields[i].id).value=v; paintRange($(oddsFields[i].id)); }});
+oddsFields.forEach(f=>$(f.id).addEventListener('input',()=>calcOdds()));
+calcOdds(false);
+$('odds-share').addEventListener('click',()=>{
+  const n = $('odds-num').textContent;
+  share(`♥ Love Math says there are ${n} potential partners out there for me. The math has spoken. Calculate yours: ${location.href}`);
+});
+
+/* ================= TAB 2: 37% RULE ================= */
+function calcCommit(save=true){
+  let now = Number($('c-now').value), settle = Number($('c-settle').value);
+  if(settle <= now){ settle = now+1; $('c-settle').value = settle; paintRange($('c-settle')); }
+  const rate = Number($('c-rate').value);
+  $('c-now-v').textContent = now; $('c-settle-v').textContent = settle; $('c-rate-v').textContent = rate;
+
+  const years = settle - now;
+  const n = Math.max(1, Math.round(years * rate));
+  const k = Math.max(1, Math.round(n / Math.E));
+  const exploreYears = k / rate;
+  const switchAge = (now + exploreYears);
+  const switchDisp = (Math.round(switchAge*10)/10).toFixed(1).replace(/\.0$/,'');
+
+  $('commit-equation').innerHTML =
+    `<span class="eq-term"><span class="lbl">years</span>${years}</span><span class="op"> × </span>`+
+    `<span class="eq-term"><span class="lbl">per yr</span>${rate}</span><span class="op"> = </span>`+
+    `<span class="eq-term"><span class="lbl">prospects</span>${n}</span><span class="op"> ÷ </span>`+
+    `<span class="eq-term"><span class="lbl">e</span>2.718</span><span class="op"> ≈ </span>`+
+    `<span class="result">explore first ${k}</span>`;
+
+  $('c-switch-age').textContent = switchDisp;
+  const pct = Math.min(95, Math.max(8, (exploreYears/years)*100));
+  $('tl-explore').style.width = pct+'%';
+  $('tl-start').textContent = now; $('tl-mid').textContent = switchDisp; $('tl-end').textContent = settle;
+  $('commit-quip').innerHTML = `Date freely until <strong>${switchDisp}</strong> — roughly your first <strong>${k}</strong> serious prospect${k>1?'s':''} — taking notes, making zero promises. After that: the first person better than all of them is your yes.`;
+  if(save) store.set('lm_commit',[now,settle,rate]);
+}
+(store.get('lm_commit')||[]).forEach((v,i)=>{ const ids=['c-now','c-settle','c-rate']; if(ids[i]){ $(ids[i]).value=v; paintRange($(ids[i])); }});
+['c-now','c-settle','c-rate'].forEach(id=>$(id).addEventListener('input',()=>calcCommit()));
+calcCommit(false);
+$('commit-share').addEventListener('click',()=>{
+  share(`♥ The 37% rule says my switch-to-commit age is ${$('c-switch-age').textContent}. Mathematically optimal romance. Find yours: ${location.href}`);
+});
+
+/* ================= TAB 3: SCORER ================= */
+const DIMS = [
+  {id:'friend', name:'Friendship & fun', w:15, hint:'Would you hang out even without the romance?'},
+  {id:'fight',  name:'How you fight', w:15, hint:'Disagreements end in repair, not scorched earth.'},
+  {id:'values', name:'Shared values & life goals', w:15, hint:'Kids, ambition, faith, how to spend a Sunday.'},
+  {id:'safe',   name:'Emotional safety & trust', w:15, hint:'You can be fully yourself. No walking on eggshells.'},
+  {id:'spark',  name:'Attraction & chemistry', w:12, hint:'The spark. Necessary, not sufficient.'},
+  {id:'money',  name:'Money compatibility', w:10, hint:'Spender/saver styles that can coexist.'},
+  {id:'family', name:'Family & future fit', w:10, hint:'Their people, your people, the life you\'d build.'},
+  {id:'growth', name:'They make you more you', w:8, hint:'You like who you are around them.'},
+];
+
+/* dealbreakers */
+let dealbreakers = store.get('lm_dbs') || [];
+function renderDbs(){
+  $('db-chips').innerHTML = dealbreakers.map((d,i)=>
+    `<span class="chip">${d}<button aria-label="Remove ${d}" data-i="${i}">×</button></span>`).join('');
+  $('db-chips').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    dealbreakers.splice(Number(b.dataset.i),1); store.set('lm_dbs',dealbreakers); renderDbs(); renderDbChecklist();
+  }));
+}
+function addDb(){
+  const v = $('db-input').value.trim();
+  if(!v) return;
+  if(dealbreakers.length>=5){ toast('Five max — that\'s the science ♥'); return; }
+  dealbreakers.push(v); $('db-input').value='';
+  store.set('lm_dbs',dealbreakers); renderDbs(); renderDbChecklist();
+}
+$('db-add').addEventListener('click',addDb);
+$('db-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addDb(); });
+
+function renderDbChecklist(){
+  const box = $('db-checklist');
+  if(!dealbreakers.length){ box.innerHTML=''; scoreLive(); return; }
+  box.innerHTML = '<div class="field" style="margin-bottom:4px"><label>Dealbreaker check</label>'+
+    dealbreakers.map((d,i)=>
+      `<div class="db-toggle"><input type="checkbox" id="dbc-${i}" checked><label for="dbc-${i}" style="font-weight:400">Passes: ${d}</label></div>`
+    ).join('')+'</div>';
+  box.querySelectorAll('input').forEach(c=>c.addEventListener('change',scoreLive));
+  scoreLive();
+}
+
+/* dimension sliders */
+$('dim-sliders').innerHTML = DIMS.map(d=>`
+  <div class="field">
+    <label for="dim-${d.id}">${d.name} <span style="font-weight:400;color:var(--ink-soft);font-size:12px">(worth ${d.w})</span> <span class="val" id="dim-${d.id}-v">5/10</span></label>
+    <input type="range" id="dim-${d.id}" min="0" max="10" value="5">
+    <p class="hint">${d.hint}</p>
+  </div>`).join('');
+DIMS.forEach(d=>{
+  const el = $('dim-'+d.id); paintRange(el);
+  el.addEventListener('input',()=>{ paintRange(el); scoreLive(); });
+});
+
+function verdictFor(score, dbFail){
+  if(dbFail) return {t:'The math says next 💔', c:'A failed dealbreaker caps everything. Non-negotiable means non-negotiable.'};
+  if(score>=85) return {t:'Marry-them math 💍', c:'These numbers are rare. Protect this one.'};
+  if(score>=70) return {t:'Serious potential 💘', c:'Strong across what matters. Keep investing.'};
+  if(score>=55) return {t:'Promising — keep dating 🌱', c:'Good bones. Time will tell you the rest.'};
+  if(score>=40) return {t:'Fun, not forever 🎢', c:'Enjoyable, but the foundations wobble.'};
+  return {t:'The math says next 💔', c:'You deserve higher numbers than this.'};
+}
+function currentScore(){
+  let raw=0;
+  DIMS.forEach(d=>{
+    const v = Number($('dim-'+d.id).value);
+    $('dim-'+d.id+'-v').textContent = v+'/10';
+    raw += (v/10)*d.w;
+  });
+  let dbFail=false;
+  document.querySelectorAll('#db-checklist input').forEach(c=>{ if(!c.checked) dbFail=true; });
+  let score = Math.round(raw);
+  if(dbFail) score = Math.min(score, 35);
+  return {score, dbFail};
+}
+function scoreLive(){
+  const {score, dbFail} = currentScore();
+  $('live-fill').style.width = score+'%';
+  $('live-score').textContent = score+'/100';
+  const v = verdictFor(score, dbFail);
+  $('live-verdict').textContent = v.t;
+}
+scoreLive();
+
+/* roster */
+let roster = store.get('lm_roster') || [];
+function renderRoster(){
+  const box = $('roster');
+  if(!roster.length){ box.innerHTML = '<p class="empty">Nobody scored yet. Go on, be a scientist about it.</p>'; return; }
+  const sorted = [...roster].sort((a,b)=>b.score-a.score);
+  box.innerHTML = sorted.map((p,i)=>`
+    <div class="roster-item">
+      <div>
+        <div class="roster-name">${i===0?'👑 ':''}${p.name}</div>
+        <div class="roster-verdict">${p.verdict}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="roster-score">${p.score}/100</div>
+        <button class="tiny-btn" data-name="${p.name}">remove</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('.tiny-btn').forEach(b=>b.addEventListener('click',()=>{
+    roster = roster.filter(p=>p.name!==b.dataset.name);
+    store.set('lm_roster',roster); renderRoster();
+  }));
+}
+$('p-save').addEventListener('click',()=>{
+  const name = $('p-name').value.trim() || 'Mystery Person';
+  const {score, dbFail} = currentScore();
+  const v = verdictFor(score, dbFail);
+  roster = roster.filter(p=>p.name!==name);
+  roster.push({name, score, verdict:v.t});
+  store.set('lm_roster',roster);
+  renderRoster();
+  toast(`${name}: ${score}/100 — ${v.t}`);
+});
+$('p-reset').addEventListener('click',()=>{
+  $('p-name').value='';
+  DIMS.forEach(d=>{ $('dim-'+d.id).value=5; paintRange($('dim-'+d.id)); });
+  document.querySelectorAll('#db-checklist input').forEach(c=>c.checked=true);
+  scoreLive();
+});
+$('roster-share').addEventListener('click',()=>{
+  if(!roster.length){ toast('Score someone first ♥'); return; }
+  const sorted=[...roster].sort((a,b)=>b.score-a.score);
+  const lines = sorted.map((p,i)=>`${i+1}. Person ${String.fromCharCode(65+i)} — ${p.score}/100 (${p.verdict})`);
+  share(`♥ My Love Math roster:\n${lines.join('\n')}\nScore your own dates: ${location.href}`);
+});
+
+renderDbs();
+renderDbChecklist();
+renderRoster();
+</script>
+</body>
+</html>
