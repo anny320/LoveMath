@@ -419,6 +419,7 @@ footer .fine{margin-top:8px;font-size:12px}
     <div id="roster"></div>
     <div class="btn-row" style="margin-top:14px">
       <button class="btn btn-butter" id="roster-share">Share my roster (names hidden) ♥</button>
+      <button class="btn btn-ghost" id="start-over">Start over completely</button>
     </div>
   </div>
 
@@ -808,11 +809,36 @@ $('p-save').addEventListener('click',()=>{
   renderRoster();
   toast(`${name}: ${score}/100 — ${v.t}`);
 });
-$('p-reset').addEventListener('click',()=>{
+function resetForm(){
   $('p-name').value='';
   DIMS.forEach(d=>{ $('dim-'+d.id).value=5; paintRange($('dim-'+d.id)); });
   document.querySelectorAll('#db-checklist input').forEach(c=>c.checked=true);
   scoreLive();
+}
+$('p-reset').addEventListener('click',()=>{
+  resetForm();
+  toast('Fresh slate — score the next contender ♥');
+});
+
+/* start over: two-tap confirm, wipes roster + dealbreakers + form */
+let soArmed = false, soTimer;
+$('start-over').addEventListener('click',()=>{
+  const btn = $('start-over');
+  if(!soArmed){
+    soArmed = true;
+    btn.textContent = 'Tap again to erase everything';
+    btn.style.background = 'var(--flame)'; btn.style.color = '#fff';
+    clearTimeout(soTimer);
+    soTimer = setTimeout(()=>{ soArmed=false; btn.textContent='Start over completely'; btn.style.background=''; btn.style.color=''; }, 3500);
+    return;
+  }
+  clearTimeout(soTimer); soArmed = false;
+  roster = []; dealbreakers = [];
+  store.set('lm_roster', roster); store.set('lm_dbs', dealbreakers);
+  renderDbs(); renderDbChecklist(); renderRoster(); resetForm();
+  btn.textContent = 'Start over completely'; btn.style.background=''; btn.style.color='';
+  track('start_over');
+  toast('Everything cleared. New era, new math ♥');
 });
 $('roster-share').addEventListener('click',()=>{
   if(!roster.length){ toast('Score someone first ♥'); return; }
