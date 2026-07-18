@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Love Math — The Romance Calculator</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RPJBF0J1YL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RPJBF0J1YL');
+</script>
 <meta name="description" content="Use real math — the Drake equation, the 37% rule, and relationship science — to find out how many potential partners are out there, when to commit, and who's actually The One.">
 <meta property="og:title" content="Love Math — The Romance Calculator">
 <meta property="og:description" content="How many soulmates are in your city? When should you stop swiping? Let the math decide.">
@@ -427,6 +435,11 @@ const store = {
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ mem[k]=v; } }
 };
 
+/* ---------- analytics (safe: no-ops if gtag is blocked) ---------- */
+function track(name, params){
+  try{ if(typeof gtag==='function') gtag('event', name, params||{}); }catch(e){}
+}
+
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
 const fmt = n => n.toLocaleString('en-US');
@@ -434,7 +447,8 @@ function toast(msg){
   const t=$('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200);
 }
-async function share(text){
+async function share(text, label){
+  track('share_click', {content: label||'unknown'});
   if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){} }
   try{ await navigator.clipboard.writeText(text); toast('Copied — go paste it somewhere ♥'); }
   catch(e){ toast('Could not copy, sorry!'); }
@@ -453,6 +467,7 @@ document.querySelectorAll('.tab').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b===btn));
     document.querySelectorAll('main section').forEach(s=>s.hidden = (s.id !== 'tab-'+btn.dataset.tab));
+    track('tab_view', {tab: btn.dataset.tab});
     window.scrollTo({top:0,behavior:'smooth'});
   });
 });
@@ -557,7 +572,7 @@ function setPool(pop, placeName){
 $('o-place').addEventListener('change',()=>{
   const q = $('o-place').value.trim().toLowerCase();
   const hit = PLACES.find(p=>p[0].toLowerCase()===q) || PLACES.find(p=>p[0].toLowerCase().startsWith(q));
-  if(hit) setPool(hit[1], hit[0]);
+  if(hit){ setPool(hit[1], hit[0]); track('place_selected', {place: hit[0]}); }
   else if(q) $('o-place-hint').textContent = 'Not in our list — no stress, just set the slider below to your best guess.';
 });
 
@@ -631,7 +646,7 @@ oddsFields.forEach(f=>$(f.id).addEventListener('input',()=>calcOdds()));
 calcOdds(false);
 $('odds-share').addEventListener('click',()=>{
   const n = $('odds-num').textContent;
-  share(`♥ Love Math says there are ${n} potential partners out there for me. The math has spoken. Calculate yours: ${location.href}`);
+  share(`♥ Love Math says there are ${n} potential partners out there for me. The math has spoken. Calculate yours: ${location.href}`,'odds');
 });
 
 /* ================= TAB 2: 37% RULE ================= */
@@ -666,7 +681,7 @@ function calcCommit(save=true){
 ['c-now','c-settle','c-rate'].forEach(id=>$(id).addEventListener('input',()=>calcCommit()));
 calcCommit(false);
 $('commit-share').addEventListener('click',()=>{
-  share(`♥ The 37% rule says my switch-to-commit age is ${$('c-switch-age').textContent}. Mathematically optimal romance. Find yours: ${location.href}`);
+  share(`♥ The 37% rule says my switch-to-commit age is ${$('c-switch-age').textContent}. Mathematically optimal romance. Find yours: ${location.href}`,'commit_age');
 });
 
 /* ================= TAB 3: SCORER ================= */
@@ -782,6 +797,7 @@ $('p-save').addEventListener('click',()=>{
   roster = roster.filter(p=>p.name!==name);
   roster.push({name, score, verdict:v.t});
   store.set('lm_roster',roster);
+  track('person_saved', {score, verdict: v.t});
   renderRoster();
   toast(`${name}: ${score}/100 — ${v.t}`);
 });
@@ -795,7 +811,7 @@ $('roster-share').addEventListener('click',()=>{
   if(!roster.length){ toast('Score someone first ♥'); return; }
   const sorted=[...roster].sort((a,b)=>b.score-a.score);
   const lines = sorted.map((p,i)=>`${i+1}. Person ${String.fromCharCode(65+i)} — ${p.score}/100 (${p.verdict})`);
-  share(`♥ My Love Math roster:\n${lines.join('\n')}\nScore your own dates: ${location.href}`);
+  share(`♥ My Love Math roster:\n${lines.join('\n')}\nScore your own dates: ${location.href}`,'roster');
 });
 
 renderDbs();
