@@ -233,9 +233,15 @@ footer .fine{margin-top:8px;font-size:12px}
     <p class="lede">In 2010, economist Peter Backus used the Drake equation — the one astronomers use to estimate alien civilisations — to count his potential girlfriends. We're doing the same for you, with better defaults and more optimism.</p>
 
     <div class="field">
-      <label for="o-pop">People in your dating pool (city / region) <span class="val" id="o-pop-v">5,000,000</span></label>
+      <label for="o-place" style="margin-bottom:8px">Where are you looking?</label>
+      <input type="text" id="o-place" list="place-list" placeholder="Type a city or country… e.g. Nairobi, London, Brazil" autocomplete="off">
+      <datalist id="place-list"></datalist>
+      <p class="hint" id="o-place-hint">Pick a place and we'll fill in the numbers — or set the slider yourself below.</p>
+    </div>
+    <div class="field">
+      <label for="o-pop">People in your dating pool <span class="val" id="o-pop-v">5,000,000</span></label>
       <input type="range" id="o-pop" min="50000" max="20000000" step="50000" value="5000000">
-      <p class="hint">Your city, plus anywhere you'd realistically date.</p>
+      <p class="hint">Your city, plus anywhere you'd realistically date. Dating apps? Add the wider region.</p>
     </div>
     <div class="field">
       <label for="o-gender">% who are the gender(s) you date <span class="val" id="o-gender-v">50%</span></label>
@@ -439,6 +445,88 @@ function countUp(el, target){
 }
 
 /* ================= TAB 1: ODDS ================= */
+
+/* Built-in place data — approx. metro-area / national populations (no API needed).
+   Format: [name, population]. Cities use metro areas because that's a real dating pool. */
+const PLACES = [
+  /* Africa */
+  ["Nairobi, Kenya",5500000],["Lagos, Nigeria",16600000],["Cairo, Egypt",22600000],
+  ["Kinshasa, DR Congo",17000000],["Johannesburg, South Africa",10500000],["Cape Town, South Africa",4900000],
+  ["Accra, Ghana",5700000],["Addis Ababa, Ethiopia",5700000],["Dar es Salaam, Tanzania",7800000],
+  ["Kampala, Uganda",3900000],["Kigali, Rwanda",1300000],["Abidjan, Côte d'Ivoire",6300000],
+  ["Casablanca, Morocco",3900000],["Algiers, Algeria",2900000],["Tunis, Tunisia",2400000],
+  ["Dakar, Senegal",3400000],["Lusaka, Zambia",3200000],["Harare, Zimbabwe",1600000],
+  ["Durban, South Africa",3200000],["Mombasa, Kenya",1400000],["Luanda, Angola",9100000],
+  ["Khartoum, Sudan",6300000],["Maputo, Mozambique",1200000],["Gaborone, Botswana",270000],
+  /* Europe */
+  ["London, UK",9700000],["Paris, France",11200000],["Berlin, Germany",3800000],
+  ["Madrid, Spain",6800000],["Barcelona, Spain",5700000],["Rome, Italy",4300000],
+  ["Milan, Italy",3200000],["Amsterdam, Netherlands",2500000],["Brussels, Belgium",2100000],
+  ["Vienna, Austria",2000000],["Dublin, Ireland",1500000],["Lisbon, Portugal",3000000],
+  ["Stockholm, Sweden",2500000],["Copenhagen, Denmark",1400000],["Oslo, Norway",1100000],
+  ["Helsinki, Finland",1300000],["Warsaw, Poland",3200000],["Prague, Czechia",1400000],
+  ["Budapest, Hungary",1800000],["Athens, Greece",3600000],["Istanbul, Türkiye",15900000],
+  ["Zurich, Switzerland",1500000],["Munich, Germany",1600000],["Manchester, UK",2900000],
+  ["Edinburgh, UK",550000],["Kyiv, Ukraine",3000000],["Bucharest, Romania",2300000],
+  /* Americas */
+  ["New York, USA",19600000],["Los Angeles, USA",12900000],["Chicago, USA",9400000],
+  ["Houston, USA",7500000],["Miami, USA",6100000],["Dallas, USA",8100000],
+  ["San Francisco Bay Area, USA",7500000],["Atlanta, USA",6300000],["Boston, USA",4900000],
+  ["Seattle, USA",4100000],["Washington DC, USA",6400000],["Denver, USA",3000000],
+  ["Toronto, Canada",6700000],["Vancouver, Canada",2800000],["Montreal, Canada",4400000],
+  ["Mexico City, Mexico",22300000],["Guadalajara, Mexico",5500000],
+  ["São Paulo, Brazil",22800000],["Rio de Janeiro, Brazil",13700000],
+  ["Buenos Aires, Argentina",15600000],["Santiago, Chile",6900000],
+  ["Bogotá, Colombia",11300000],["Medellín, Colombia",4100000],["Lima, Peru",11200000],
+  /* Asia & Middle East */
+  ["Tokyo, Japan",37200000],["Osaka, Japan",19000000],["Seoul, South Korea",25500000],
+  ["Beijing, China",21500000],["Shanghai, China",29200000],["Shenzhen, China",13100000],
+  ["Hong Kong",7500000],["Taipei, Taiwan",7000000],["Singapore",5900000],
+  ["Bangkok, Thailand",11200000],["Ho Chi Minh City, Vietnam",9600000],["Hanoi, Vietnam",5400000],
+  ["Manila, Philippines",14700000],["Jakarta, Indonesia",34500000],["Kuala Lumpur, Malaysia",8600000],
+  ["Mumbai, India",21700000],["Delhi, India",33800000],["Bangalore, India",14000000],
+  ["Hyderabad, India",11300000],["Chennai, India",12000000],["Karachi, Pakistan",17600000],
+  ["Lahore, Pakistan",14400000],["Dhaka, Bangladesh",23900000],["Colombo, Sri Lanka",2500000],
+  ["Dubai, UAE",3700000],["Abu Dhabi, UAE",1600000],["Riyadh, Saudi Arabia",7700000],
+  ["Doha, Qatar",2400000],["Tel Aviv, Israel",4400000],["Amman, Jordan",4600000],
+  /* Oceania */
+  ["Sydney, Australia",5300000],["Melbourne, Australia",5200000],["Brisbane, Australia",2600000],
+  ["Perth, Australia",2200000],["Auckland, New Zealand",1700000],["Wellington, New Zealand",420000],
+  /* Countries — for people who date nationally / online */
+  ["Kenya (whole country)",56000000],["Nigeria (whole country)",229000000],["South Africa (whole country)",61000000],
+  ["Ghana (whole country)",34000000],["Egypt (whole country)",115000000],["Ethiopia (whole country)",128000000],
+  ["Tanzania (whole country)",68000000],["Uganda (whole country)",49000000],["Rwanda (whole country)",14000000],
+  ["USA (whole country)",342000000],["Canada (whole country)",40000000],["Mexico (whole country)",130000000],
+  ["Brazil (whole country)",217000000],["Argentina (whole country)",47000000],["Colombia (whole country)",53000000],
+  ["UK (whole country)",68000000],["France (whole country)",66000000],["Germany (whole country)",84000000],
+  ["Spain (whole country)",48000000],["Italy (whole country)",59000000],["Netherlands (whole country)",18000000],
+  ["Portugal (whole country)",10000000],["Ireland (whole country)",5300000],["Poland (whole country)",37000000],
+  ["Sweden (whole country)",10600000],["India (whole country)",1440000000],["China (whole country)",1410000000],
+  ["Japan (whole country)",123000000],["South Korea (whole country)",52000000],["Indonesia (whole country)",281000000],
+  ["Philippines (whole country)",119000000],["Vietnam (whole country)",101000000],["Thailand (whole country)",72000000],
+  ["Pakistan (whole country)",245000000],["Bangladesh (whole country)",174000000],["Türkiye (whole country)",86000000],
+  ["Saudi Arabia (whole country)",37000000],["UAE (whole country)",10000000],["Israel (whole country)",9900000],
+  ["Australia (whole country)",27000000],["New Zealand (whole country)",5300000]
+];
+$('place-list').innerHTML = PLACES.map(p=>`<option value="${p[0]}">`).join('');
+
+function setPool(pop, placeName){
+  const slider = $('o-pop');
+  if(pop > Number(slider.max)) slider.max = pop;        /* grow the slider for big countries */
+  slider.value = pop;
+  paintRange(slider);
+  $('o-place-hint').textContent = placeName
+    ? `${placeName}: ~${fmt(pop)} people. Tweak the slider if your real pool is bigger or smaller.`
+    : 'Pick a place and we\'ll fill in the numbers — or set the slider yourself below.';
+  calcOdds();
+}
+$('o-place').addEventListener('change',()=>{
+  const q = $('o-place').value.trim().toLowerCase();
+  const hit = PLACES.find(p=>p[0].toLowerCase()===q) || PLACES.find(p=>p[0].toLowerCase().startsWith(q));
+  if(hit) setPool(hit[1], hit[0]);
+  else if(q) $('o-place-hint').textContent = 'Not in our list — no stress, just set the slider below to your best guess.';
+});
+
 const oddsFields = [
   {id:'o-pop',   lbl:'pool',    fmt:v=>fmt(v)},
   {id:'o-gender',lbl:'gender',  fmt:v=>'.'+String(v).padStart(2,'0')},
@@ -471,7 +559,13 @@ function calcOdds(save=true){
   $('odds-quip').textContent = oddsQuip(total);
   if(save) store.set('lm_odds', oddsFields.map(f=>$(f.id).value));
 }
-(store.get('lm_odds')||[]).forEach((v,i)=>{ if(oddsFields[i]){ $(oddsFields[i].id).value=v; paintRange($(oddsFields[i].id)); }});
+(store.get('lm_odds')||[]).forEach((v,i)=>{
+  if(oddsFields[i]){
+    const el = $(oddsFields[i].id);
+    if(Number(v) > Number(el.max)) el.max = v;   /* restore big country pools correctly */
+    el.value = v; paintRange(el);
+  }
+});
 oddsFields.forEach(f=>$(f.id).addEventListener('input',()=>calcOdds()));
 calcOdds(false);
 $('odds-share').addEventListener('click',()=>{
