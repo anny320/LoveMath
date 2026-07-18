@@ -83,6 +83,16 @@ h2{
   border-left:3px solid var(--lilac);padding:10px 12px;border-radius:0 10px 10px 0;margin:14px 0 0;
 }
 
+/* ---------- quick-pick pills ---------- */
+.pick-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.pick{
+  font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:13.5px;
+  padding:8px 14px;border-radius:999px;border:1.5px solid var(--ink);
+  background:var(--card);color:var(--ink);cursor:pointer;transition:all .15s;
+}
+.pick:hover{background:rgba(37,22,41,.06)}
+.pick[aria-pressed="true"]{background:var(--flame);border-color:var(--flame);color:#fff}
+
 /* ---------- sliders ---------- */
 .field{margin:22px 0}
 .field label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:600;font-size:15px;margin-bottom:8px}
@@ -244,8 +254,24 @@ footer .fine{margin-top:8px;font-size:12px}
       <p class="hint">Your city, plus anywhere you'd realistically date. Dating apps? Add the wider region.</p>
     </div>
     <div class="field">
-      <label for="o-gender">% who are the gender(s) you date <span class="val" id="o-gender-v">50%</span></label>
+      <label style="margin-bottom:8px">How do you meet people?</label>
+      <div class="pick-row" id="reach-picks" role="group" aria-label="How do you meet people">
+        <button class="pick" data-val="1" aria-pressed="true">In real life only ×1</button>
+        <button class="pick" data-val="1.5" aria-pressed="false">Apps too ×1.5</button>
+        <button class="pick" data-val="3" aria-pressed="false">Long-distance OK ×3</button>
+      </div>
+      <p class="hint">Apps and openness to distance widen your effective reach beyond who you'd bump into.</p>
+    </div>
+    <div class="field">
+      <label style="margin-bottom:8px">Who do you date?</label>
+      <div class="pick-row" id="gender-picks" role="group" aria-label="Who do you date">
+        <button class="pick" data-val="49" aria-pressed="false">Men</button>
+        <button class="pick" data-val="51" aria-pressed="false">Women</button>
+        <button class="pick" data-val="100" aria-pressed="false">Everyone</button>
+      </div>
+      <label for="o-gender">% of the pool that covers <span class="val" id="o-gender-v">50%</span></label>
       <input type="range" id="o-gender" min="1" max="100" value="50">
+      <p class="hint">Most places are roughly half men, half women — tap a chip or fine-tune the slider yourself. It's about who you date, not who you are.</p>
     </div>
     <div class="field">
       <label for="o-age">% in your age range <span class="val" id="o-age-v">20%</span></label>
@@ -458,6 +484,12 @@ const PLACES = [
   ["Dakar, Senegal",3400000],["Lusaka, Zambia",3200000],["Harare, Zimbabwe",1600000],
   ["Durban, South Africa",3200000],["Mombasa, Kenya",1400000],["Luanda, Angola",9100000],
   ["Khartoum, Sudan",6300000],["Maputo, Mozambique",1200000],["Gaborone, Botswana",270000],
+  ["Kisumu, Kenya",610000],["Eldoret, Kenya",480000],["Nakuru, Kenya",570000],
+  ["Abuja, Nigeria",3800000],["Ibadan, Nigeria",3900000],["Port Harcourt, Nigeria",3500000],
+  ["Kano, Nigeria",4600000],["Kumasi, Ghana",3600000],["Arusha, Tanzania",620000],
+  ["Mwanza, Tanzania",1100000],["Zanzibar City, Tanzania",700000],["Pretoria, South Africa",2800000],
+  ["Gqeberha (PE), South Africa",1300000],["Bujumbura, Burundi",1100000],["Lilongwe, Malawi",1200000],
+  ["Windhoek, Namibia",490000],["Freetown, Sierra Leone",1300000],["Monrovia, Liberia",1600000],
   /* Europe */
   ["London, UK",9700000],["Paris, France",11200000],["Berlin, Germany",3800000],
   ["Madrid, Spain",6800000],["Barcelona, Spain",5700000],["Rome, Italy",4300000],
@@ -474,6 +506,8 @@ const PLACES = [
   ["San Francisco Bay Area, USA",7500000],["Atlanta, USA",6300000],["Boston, USA",4900000],
   ["Seattle, USA",4100000],["Washington DC, USA",6400000],["Denver, USA",3000000],
   ["Toronto, Canada",6700000],["Vancouver, Canada",2800000],["Montreal, Canada",4400000],
+  ["Austin, USA",2500000],["Philadelphia, USA",6200000],["Phoenix, USA",5100000],
+  ["Minneapolis, USA",3700000],["San Diego, USA",3300000],["Nashville, USA",2100000],
   ["Mexico City, Mexico",22300000],["Guadalajara, Mexico",5500000],
   ["São Paulo, Brazil",22800000],["Rio de Janeiro, Brazil",13700000],
   ["Buenos Aires, Argentina",15600000],["Santiago, Chile",6900000],
@@ -536,6 +570,29 @@ const oddsFields = [
   {id:'o-vibe',  lbl:'values',  fmt:v=>'.'+String(v).padStart(2,'0')},
   {id:'o-mutual',lbl:'mutual',  fmt:v=>'.'+String(v).padStart(2,'0')},
 ];
+/* reach multiplier (apps / long-distance) */
+let reach = Number(store.get('lm_reach')) || 1;
+function bindPicks(rowId, onPick){
+  const row = $(rowId);
+  row.querySelectorAll('.pick').forEach(b=>b.addEventListener('click',()=>{
+    row.querySelectorAll('.pick').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    onPick(Number(b.dataset.val));
+  }));
+}
+bindPicks('reach-picks', v=>{ reach = v; store.set('lm_reach', v); calcOdds(); });
+/* restore pressed state for reach */
+document.querySelectorAll('#reach-picks .pick').forEach(b=>
+  b.setAttribute('aria-pressed', Number(b.dataset.val)===reach));
+
+bindPicks('gender-picks', v=>{
+  const el = $('o-gender'); el.value = v; paintRange(el); calcOdds();
+});
+/* moving the gender slider manually un-presses the chips */
+$('o-gender').addEventListener('input',()=>{
+  document.querySelectorAll('#gender-picks .pick').forEach(b=>
+    b.setAttribute('aria-pressed', Number(b.dataset.val)===Number($('o-gender').value)));
+});
+
 function oddsQuip(n){
   if(n===0) return "Zero?! Loosen one slider — even Backus wasn't this strict, and he married someone.";
   if(n<10) return `A rare-vintage situation. ${n} people is small — but you only need one, and rare things are worth hunting.`;
@@ -552,6 +609,10 @@ function calcOdds(save=true){
     n *= (i===0 ? v : v/100);
     return `<span class="eq-term"><span class="lbl">${f.lbl}</span>${f.fmt(v)}</span>`;
   });
+  if(reach !== 1){
+    n *= reach;
+    parts.push(`<span class="eq-term"><span class="lbl">reach</span>×${reach}</span>`);
+  }
   const total = Math.round(n);
   $('odds-equation').innerHTML = parts.join('<span class="op"> × </span>') +
     '<span class="op"> = </span><span class="result">'+fmt(total)+'</span>';
