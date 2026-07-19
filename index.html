@@ -270,6 +270,7 @@ footer .fine{margin-top:8px;font-size:12px}
   <div class="card">
     <h2>How many people out there are for you?</h2>
     <p class="lede">In 2010, economist Peter Backus used the Drake equation — the one astronomers use to estimate alien civilisations — to count his potential girlfriends. We're doing the same for you, with better defaults and more optimism.</p>
+    <p class="factlet" style="margin-bottom:6px"><strong>Don't overthink the numbers.</strong> Just tap the description that sounds most like you — the magic is in the multiplication, not the precision. Nobody's checking your homework.</p>
 
     <div class="field">
       <label for="o-place" style="margin-bottom:8px">Where are you looking?</label>
@@ -305,26 +306,27 @@ footer .fine{margin-top:8px;font-size:12px}
     <div class="field">
       <label for="o-age">% in your age range <span class="val" id="o-age-v">20%</span></label>
       <input type="range" id="o-age" min="1" max="100" value="20">
-      <p class="hint">A 10-year window is usually 15–25% of a city.</p>
+      <p class="hint">How wide is your age window? Tap the closest fit.</p>
     </div>
     <div class="field">
       <label for="o-single">% of those who are single <span class="val" id="o-single-v">40%</span></label>
       <input type="range" id="o-single" min="1" max="100" value="40">
+      <p class="hint">Singleness depends on the crowd's age — people in their 20s are mostly single, 40s much less so. Tap your bracket.</p>
     </div>
     <div class="field">
       <label for="o-attract">% you'd find attractive <span class="val" id="o-attract-v">15%</span></label>
       <input type="range" id="o-attract" min="1" max="100" value="15">
-      <p class="hint">Be honest, not brutal. Attraction grows with familiarity.</p>
+      <p class="hint">Gut feel is fine — how often does someone catch your eye? Attraction grows with familiarity anyway.</p>
     </div>
     <div class="field">
       <label for="o-vibe">% who'd share your values &amp; vibe <span class="val" id="o-vibe-v">30%</span></label>
       <input type="range" id="o-vibe" min="1" max="100" value="30">
-      <p class="hint">Research says shared values beat shared hobbies, every time.</p>
+      <p class="hint">How long is your must-share list — faith, kids, lifestyle? Longer list = pickier tap.</p>
     </div>
     <div class="field">
       <label for="o-mutual">% who'd like you back <span class="val" id="o-mutual-v">20%</span></label>
       <input type="range" id="o-mutual" min="1" max="100" value="20">
-      <p class="hint">You're more likeable than your inner critic says. Nudge it up.</p>
+      <p class="hint">Not a self-worth exam — of people you'd approach, how many would say yes to a date? You're more likeable than your inner critic says.</p>
     </div>
   </div>
 
@@ -628,6 +630,32 @@ bindPicks('gender-picks', v=>{
 $('o-gender').addEventListener('input',()=>{
   document.querySelectorAll('#gender-picks .pick').forEach(b=>
     b.setAttribute('aria-pressed', Number(b.dataset.val)===Number($('o-gender').value)));
+});
+
+/* ---- plain-language presets: tap a description instead of guessing a % ---- */
+const SLIDER_PRESETS = {
+  'o-age':    [['Narrow: ±3 yrs',8],   ['Typical: ±5–7 yrs',15], ['Wide: 10+ yrs',25]],
+  'o-single': [['I date 20s',55],      ['I date 30s',40],        ['I date 40s+',28]],
+  'o-attract':[['Very picky',5],       ['Selective',15],         ['Open-hearted',30]],
+  'o-vibe':   [['Very specific must-haves',15], ['A few key things',30], ['Easy-going',50]],
+  'o-mutual': [['Modest me',10],       ['Realistic',20],         ['Confident',35]]
+};
+Object.entries(SLIDER_PRESETS).forEach(([id, opts])=>{
+  const slider = $(id);
+  const row = document.createElement('div');
+  row.className = 'pick-row';
+  row.setAttribute('role','group');
+  row.innerHTML = opts.map(o=>`<button class="pick" data-val="${o[1]}" aria-pressed="false">${o[0]}</button>`).join('');
+  slider.parentNode.insertBefore(row, slider);
+  row.querySelectorAll('.pick').forEach(b=>b.addEventListener('click',()=>{
+    row.querySelectorAll('.pick').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    slider.value = Number(b.dataset.val);
+    paintRange(slider);
+    calcOdds();
+  }));
+  slider.addEventListener('input',()=>{
+    row.querySelectorAll('.pick').forEach(x=>x.setAttribute('aria-pressed', Number(x.dataset.val)===Number(slider.value)));
+  });
 });
 
 function oddsQuip(n){
