@@ -18,419 +18,6 @@
     document.head.appendChild(s);
   });
 
-/* ================= TAB 4: HEALTHY DATING CHECKLIST ================= */
-const HC_GROUPS = [
-  {title:'A. Emotional availability',items:[
-    'He makes an effort to know me beyond physical attraction.',
-    'He asks about my life, thoughts, ambitions and feelings.',
-    'He can express his own emotions without shutting down.',
-    'He is comfortable having difficult conversations.',
-    'I do not have to guess where I stand.',
-    'He shows genuine interest even when he does not need anything from me.'
-  ]},
-  {title:'B. Consistency and communication',items:[
-    'His words and actions align.',
-    'He initiates conversations, not just responds.',
-    'He communicates when busy rather than disappearing.',
-    'He follows through on plans.',
-    'I do not feel like I am chasing his attention.',
-    'Communication feels natural and reasonably mutual.'
-  ]},
-  {title:'C. Relationship intentions',items:[
-    'We want compatible things from a relationship.',
-    'We have discussed exclusivity and expectations when appropriate.',
-    'He is interested in building something, not just enjoying the benefits.',
-    'He understands that marriage is a journey, not a sales pitch.',
-    'He respects my pace and boundaries.',
-    'His intentions are demonstrated through behaviour.'
-  ]},
-  {title:'D. Compatibility and lifestyle',items:[
-    'We can have intellectually stimulating conversations.',
-    'We share compatible values.',
-    'We have compatible approaches to money and financial responsibility.',
-    'We have similar expectations around family and marriage.',
-    'He respects my career, independence and ambitions.',
-    'We can have fun without everything being serious.',
-    'I can imagine doing ordinary, everyday life with him.'
-  ]},
-  {title:'E. How I feel around him',items:[
-    'I feel safe being myself.',
-    'I feel respected, not evaluated.',
-    'I can disagree without fearing his reaction.',
-    'I feel appreciated, not merely useful.',
-    'I do not feel anxious waiting for his messages.',
-    'I can be vulnerable without feeling exposed or foolish.',
-    'I like who I become when I am around him.'
-  ]}
-];
-const HC_RULES = [
-  'I will not audition for someone’s affection.',
-  'I will not confuse chemistry with compatibility.',
-  'I will not over-invest in someone whose effort is inconsistent.',
-  'I will not become someone’s therapist, parent, project manager or financial safety net.',
-  'I will communicate my needs rather than expect mind-reading.',
-  'I will allow people to reveal themselves over time.',
-  'I will not abandon my routines, friendships, work or personal growth to accommodate dating.',
-  'I will remain open to love without ignoring red flags.',
-  'I will not rush commitment simply because someone says they want marriage.',
-  'I will remember that I am also choosing.'
-];
-const HC_QUESTIONS = [
-  'Was I seen? Did he show curiosity about who I am?',
-  'Was I comfortable? Could I be myself without performing?',
-  'Was there reciprocity? Was the interest mutual?',
-  'Was I attracted to him, or attracted to the attention?',
-  'Would I want another date if I knew he would not change one thing about himself?'
-];
-const hcStoreKey = name => 'lm_healthy_' + (name.trim().toLowerCase() || 'unnamed');
-let hcCurrentKey = hcStoreKey('');
-let hcData = {};
-function hcRead(){
-  try { hcData = JSON.parse(localStorage.getItem(hcCurrentKey)) || {}; }
-  catch(e){ hcData = {}; }
-}
-function hcWrite(){
-  try { localStorage.setItem(hcCurrentKey, JSON.stringify(hcData)); }
-  catch(e){ toast('Could not save on this device.'); }
-}
-function hcBuildChecklist(){
-  const root = $('hc-checklist');
-  root.innerHTML = '';
-  let index = 0;
-  HC_GROUPS.forEach((group, gi) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'check-group';
-    const heading = document.createElement('h3');
-    heading.textContent = group.title;
-    wrap.appendChild(heading);
-    group.items.forEach((item, ii) => {
-      const row = document.createElement('div');
-      row.className = 'check-item';
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.id = 'hc-item-' + index;
-      const itemIndex = index;
-      input.dataset.index = itemIndex;
-      input.checked = !!(hcData.checks && hcData.checks[itemIndex]);
-      const label = document.createElement('label');
-      label.htmlFor = input.id;
-      label.textContent = item;
-      input.addEventListener('change', () => {
-        hcData.checks = hcData.checks || {};
-        hcData.checks[itemIndex] = input.checked;
-        hcWrite(); hcUpdateProgress();
-      });
-      row.append(input, label);
-      wrap.appendChild(row);
-      index++;
-    });
-    root.appendChild(wrap);
-  });
-}
-function hcBuildRules(){
-  const root = $('hc-rules');
-  root.innerHTML = '';
-  HC_RULES.forEach((rule, i) => {
-    const row = document.createElement('div');
-    row.className = 'check-item';
-    const input = document.createElement('input');
-    input.type = 'checkbox'; input.id = 'hc-rule-' + i;
-    input.checked = !(hcData.rules && hcData.rules[i] === false);
-    const label = document.createElement('label');
-    label.htmlFor = input.id; label.textContent = rule;
-    input.addEventListener('change', () => {
-      hcData.rules = hcData.rules || {};
-      hcData.rules[i] = input.checked; hcWrite();
-    });
-    row.append(input, label); root.appendChild(row);
-  });
-}
-function hcBuildQuestions(){
-  const root = $('hc-reflections');
-  root.innerHTML = '';
-  HC_QUESTIONS.forEach((q, i) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'reflection-q';
-    const label = document.createElement('label');
-    label.htmlFor = 'hc-q-' + i; label.textContent = (i+1)+'. '+q;
-    const area = document.createElement('textarea');
-    area.id = 'hc-q-' + i; area.placeholder = 'Your honest reflection...';
-    area.value = (hcData.answers && hcData.answers[i]) || '';
-    area.addEventListener('input', () => {
-      hcData.answers = hcData.answers || {};
-      hcData.answers[i] = area.value; hcWrite();
-    });
-    wrap.append(label, area); root.appendChild(wrap);
-  });
-}
-function hcUpdateProgress(){
-  const total = HC_GROUPS.reduce((n,g)=>n+g.items.length,0);
-  const done = Object.values(hcData.checks || {}).filter(Boolean).length;
-  $('hc-progress-label').textContent = done + ' / ' + total;
-  $('hc-progress-fill').style.width = (done/total*100) + '%';
-  $('hc-progress-note').textContent = done === total
-    ? 'All observed green flags checked. Keep paying attention to consistency over time.'
-    : done + ' observed so far. Blank means “not known yet”, not “bad”.';
-}
-function hcLoad(){
-  hcCurrentKey = hcStoreKey($('hc-person').value);
-  hcRead(); hcBuildChecklist(); hcBuildRules(); hcBuildQuestions();
-  ['hc-evidence','hc-concern','hc-next'].forEach(id => {
-    $(id).value = (hcData.notes && hcData.notes[id]) || '';
-    $(id).oninput = () => {
-      hcData.notes = hcData.notes || {};
-      hcData.notes[id] = $(id).value; hcWrite();
-    };
-  });
-  hcUpdateProgress();
-}
-$('hc-person').addEventListener('change', hcLoad);
-$('hc-save').addEventListener('click', () => {
-  hcWrite(); toast('Reflection saved on this device ♥');
-});
-function hcMakeReport(){
-  const name = $('hc-person').value.trim() || 'Unnamed person';
-  const checked = Object.values(hcData.checks || {}).filter(Boolean).length;
-  const total = HC_GROUPS.reduce((n,g)=>n+g.items.length,0);
-  const lines = ['LOVE MATH — HEALTHY DATING REFLECTION', 'Person: '+name, 'Observed green flags: '+checked+'/'+total, ''];
-  let i = 0;
-  HC_GROUPS.forEach(g => {
-    lines.push(g.title);
-    g.items.forEach(item => { lines.push((hcData.checks && hcData.checks[i] ? '[x] ' : '[ ] ') + item); i++; });
-    lines.push('');
-  });
-  lines.push('MY NON-NEGOTIABLES');
-  HC_RULES.forEach((rule,j)=>lines.push((!hcData.rules || hcData.rules[j] !== false ? '[x] ' : '[ ] ')+rule));
-  lines.push('', 'AFTER THE DATE');
-  HC_QUESTIONS.forEach((q,j)=>lines.push((j+1)+'. '+q+'\\n'+((hcData.answers && hcData.answers[j])||'')));
-  lines.push('', 'MY NOTES');
-  ['hc-evidence','hc-concern','hc-next'].forEach(id=>lines.push(id.replace('hc-','')+':\\n'+((hcData.notes && hcData.notes[id])||'')));
-  return lines.join('\\n');
-}
-$('hc-share').addEventListener('click', async () => {
-  hcWrite();
-  const report = hcMakeReport();
-  if (navigator.share) {
-    try {
-      await navigator.share({title: 'My Love Math dating reflection', text: report});
-      toast('Share sheet opened ♥');
-    } catch(e) {
-      if (e && e.name === 'AbortError') return;
-      try {
-        await navigator.clipboard.writeText(report);
-        toast('Sharing unavailable — notes copied ♥');
-      } catch(err) { toast('Sharing is unavailable in this browser.'); }
-    }
-  } else {
-    try {
-      await navigator.clipboard.writeText(report);
-      toast('Share unavailable — notes copied. Paste into a message to yourself ♥');
-    } catch(e) { toast('Sharing is unavailable in this browser.'); }
-  }
-});
-$('hc-export').addEventListener('click', () => {
-  const textOut = hcMakeReport();
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(textOut).then(()=>toast('Notes copied ♥')).catch(()=>toast('Copy unavailable in this browser.'));
-  } else { toast('Copy is unavailable in this browser.'); }
-});
-$('hc-reset').addEventListener('click', () => {
-  if (!confirm('Reset the checklist and reflections for this person?')) return;
-  try { localStorage.removeItem(hcCurrentKey); } catch(e){}
-  hcLoad(); toast('Fresh start ♥');
-});
-hcLoad();
-
-
-/* ================= HEALTHY DATING: HIS + OUR EDITIONS ================= */
-const HIM_GROUPS = [
-  {title:'A. Emotional maturity and availability',items:[
-    'I can identify and communicate what I am feeling.',
-    'I can be vulnerable without treating it as weakness.',
-    'I take responsibility and apologise when I am wrong.',
-    'I can disagree without aggression, contempt or shutting down.',
-    'I do not expect a partner to manage my emotional wellbeing.',
-    'I can offer emotional support, not only seek it.',
-    'I have reflected on lessons from previous relationships.'
-  ]},
-  {title:'B. Integrity and consistency',items:[
-    'My actions match my words.',
-    'I follow through on commitments.',
-    'I am honest even when the conversation is uncomfortable.',
-    'I show care and interest even when I do not need something.',
-    'I respect boundaries and personal space.',
-    'I do not use silence, jealousy or manipulation to control someone.',
-    'I treat people respectfully, including those who cannot benefit me.'
-  ]},
-  {title:'C. Intentionality and commitment',items:[
-    'I know what kind of relationship I want.',
-    'I am emotionally available for the relationship I say I want.',
-    'I can explain what partnership and marriage mean to me.',
-    'I understand that commitment requires ongoing effort.',
-    'I am willing to discuss children, family and the future.',
-    'I do not use promises of marriage to rush intimacy.',
-    'I am willing to build trust progressively.'
-  ]},
-  {title:'D. Responsibility and financial maturity',items:[
-    'I take responsibility for my life and decisions.',
-    'I have a healthy and realistic relationship with money.',
-    'I can be financially transparent when a relationship becomes serious.',
-    'I have realistic goals and work towards them.',
-    'I understand financial partnership and shared responsibilities.',
-    'I do not use money or providing as a way to control.',
-    'I can discuss financial challenges without shame or defensiveness.'
-  ]},
-  {title:'E. Partnership and compatibility',items:[
-    'I respect my partner’s independence and ambitions.',
-    'I see household and family responsibilities as shared.',
-    'I can celebrate my partner’s success without feeling threatened.',
-    'I am willing to compromise and make joint decisions.',
-    'I can maintain healthy family relationships while setting appropriate boundaries.',
-    'I make space for romance, friendship and fun.',
-    'I see partnership as collaboration rather than competition.'
-  ]}
-];
-const HIM_QUESTIONS=[
-  'Am I looking for a partner, or someone to fill a gap in my life?',
-  'Am I emotionally available, or simply lonely?',
-  'Can I offer the consistency, loyalty and effort I expect?',
-  'Have I processed my past relationships without making someone new pay for them?',
-  'Can I support a woman who is ambitious, independent and successful?',
-  'Am I prepared to share decisions, responsibilities and vulnerabilities?',
-  'Would I be proud of how I treat my partner when nobody is watching?'
-];
-const OUR_AREAS=[
-  'What commitment and exclusivity mean to us',
-  'Marriage intentions, timing and expectations',
-  'Children, parenting and family life',
-  'Money, financial habits and shared responsibilities',
-  'Career ambitions, independence and lifestyle',
-  'Communication, disagreement and conflict repair',
-  'Affection, intimacy, boundaries and emotional needs',
-  'Faith, values, culture and community',
-  'Household responsibilities and practical partnership',
-  'How we make important decisions together'
-];
-let himData={};
-let ourData={a:{},b:{}};
-let ourEditing='a';
-function safeLoad(key){try{return JSON.parse(localStorage.getItem(key))||{};}catch(e){return {};}}
-function safeSave(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch(e){toast('Could not save on this device.');}}
-function buildHim(){
-  const root=$('him-checklist'); root.innerHTML='';
-  let idx=0;
-  HIM_GROUPS.forEach(group=>{
-    const wrap=document.createElement('div');wrap.className='check-group';
-    const h=document.createElement('h3');h.textContent=group.title;wrap.appendChild(h);
-    group.items.forEach(item=>{
-      const row=document.createElement('div');row.className='check-item';
-      const input=document.createElement('input');input.type='checkbox';input.id='him-check-'+idx;input.checked=!!himData.checks?.[idx];
-      const label=document.createElement('label');label.htmlFor=input.id;label.textContent=item;
-      input.addEventListener('change',()=>{himData.checks=himData.checks||{};himData.checks[idx]=input.checked;saveHim();updateHimProgress();});
-      row.append(input,label);wrap.appendChild(row);idx++;
-    });
-    root.appendChild(wrap);
-  });
-  const qroot=$('him-questions');qroot.innerHTML='';
-  HIM_QUESTIONS.forEach((q,i)=>{
-    const wrap=document.createElement('div');wrap.className='reflection-q';
-    const label=document.createElement('label');label.htmlFor='him-q-'+i;label.textContent=(i+1)+'. '+q;
-    const area=document.createElement('textarea');area.id='him-q-'+i;area.placeholder='Your honest answer...';area.value=himData.answers?.[i]||'';
-    area.addEventListener('input',()=>{himData.answers=himData.answers||{};himData.answers[i]=area.value;saveHim();});
-    wrap.append(label,area);qroot.appendChild(wrap);
-  });
-  ['him-evidence','him-growth','him-action'].forEach(id=>{
-    $(id).value=himData.notes?.[id]||'';
-    $(id).oninput=()=>{himData.notes=himData.notes||{};himData.notes[id]=$(id).value;saveHim();};
-  });
-  $('him-name').value=himData.name||'';
-  $('him-name').oninput=()=>{himData.name=$('him-name').value;saveHim();};
-  updateHimProgress();
-}
-function saveHim(){safeSave('lm_him_edition',himData);}
-function updateHimProgress(){
-  const total=HIM_GROUPS.reduce((n,g)=>n+g.items.length,0);
-  const count=Object.values(himData.checks||{}).filter(Boolean).length;
-  $('him-progress-label').textContent=count+' / '+total;
-  $('him-progress-fill').style.width=(count/total*100)+'%';
-  $('him-progress-note').textContent=count===total?'All reflections checked. Keep turning insight into consistent action.':count+' of '+total+' statements currently feel true. Blank means there is room to reflect.';
-}
-function renderOur(){
-  const root=$('our-questions');root.innerHTML='';
-  OUR_AREAS.forEach((q,i)=>{
-    const row=document.createElement('div');row.className='couple-row';
-    const title=document.createElement('strong');title.textContent=(i+1)+'. '+q;row.appendChild(title);
-    const grid=document.createElement('div');grid.className='couple-ratings';
-    ['a','b'].forEach(person=>{
-      const wrap=document.createElement('div');
-      const label=document.createElement('label');label.textContent=person==='a'?($('our-name-a').value.trim()||'Person A'):($('our-name-b').value.trim()||'Person B');
-      const select=document.createElement('select');select.setAttribute('aria-label',label.textContent+' rating for '+q);
-      select.innerHTML='<option value="">Not discussed yet</option>'+[1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+(n===1?' — very different':n===5?' — strongly aligned':'')+'</option>').join('');
-      select.value=ourData[person][i]||'';
-      select.disabled=person!==ourEditing;
-      select.addEventListener('change',()=>{ourData[person][i]=select.value;safeSave('lm_our_edition',ourData);});
-      wrap.append(label,select);grid.appendChild(wrap);
-    });
-    row.appendChild(grid);root.appendChild(row);
-  });
-}
-function updateOurNames(){
-  $('our-edit-a').textContent='Answer as '+($('our-name-a').value.trim()||'Person A');
-  $('our-edit-b').textContent='Answer as '+($('our-name-b').value.trim()||'Person B');
-}
-function compareOur(){
-  const root=$('our-alignment');root.innerHTML='';
-  let sum=0,n=0;
-  OUR_AREAS.forEach((area,i)=>{
-    const a=Number(ourData.a[i]),b=Number(ourData.b[i]);
-    const row=document.createElement('div');row.className='alignment-item';
-    const title=document.createElement('strong');title.textContent=area;row.appendChild(title);
-    const detail=document.createElement('div');detail.className='check-note';
-    if(!a||!b){detail.textContent='Not enough information yet — both people need to answer.';}
-    else{
-      const diff=Math.abs(a-b);sum+=diff;n++;
-      detail.textContent=($('our-name-a').value.trim()||'Person A')+': '+a+'/5 · '+($('our-name-b').value.trim()||'Person B')+': '+b+'/5 · '+(diff===0?'Same rating':diff===1?'Close perspectives':'Worth a conversation');
-      const bar=document.createElement('div');bar.className='alignment-bar';const fill=document.createElement('span');fill.style.width=((5-diff)/5*100)+'%';bar.appendChild(fill);row.appendChild(bar);
-    }
-    row.appendChild(detail);root.appendChild(row);
-  });
-  const summary=document.createElement('p');summary.className='factlet';
-  summary.textContent=n?'Compared '+n+' areas. Average rating difference: '+(sum/n).toFixed(1)+' points out of 5. This is a conversation guide, not a compatibility verdict.':'Both people need to rate at least one area before a comparison appears.';
-  root.prepend(summary);$('our-results').hidden=false;
-}
-document.querySelectorAll('[data-edition]').forEach(btn=>btn.addEventListener('click',()=>{
-  const chosen=btn.dataset.edition;
-  document.querySelectorAll('[data-edition]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
-  ['her','him','our'].forEach(id=>$('hc-'+id+'-view').hidden=id!==chosen);
-}));
-document.querySelectorAll('[data-partner]').forEach(btn=>btn.addEventListener('click',()=>{
-  ourEditing=btn.dataset.partner;
-  document.querySelectorAll('[data-partner]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
-  $('our-edit-note').textContent='You are currently entering '+($('our-name-'+ourEditing).value.trim()||('Person '+ourEditing.toUpperCase()))+"'s answers. Give each person privacy to answer honestly.";
-  renderOur();
-}));
-['our-name-a','our-name-b'].forEach(id=>$(id).addEventListener('input',()=>{updateOurNames();renderOur();}));
-$('our-save').addEventListener('click',()=>{safeSave('lm_our_edition',ourData);toast('Both perspectives saved on this device ♥');});
-$('our-compare').addEventListener('click',compareOur);
-$('our-share').addEventListener('click',async()=>{
-  const lines=['LOVE MATH — OUR EDITION','A conversation guide, not a compatibility verdict.'];
-  OUR_AREAS.forEach((q,i)=>lines.push(q+': '+(ourData.a[i]||'Not answered')+' / '+(ourData.b[i]||'Not answered')));
-  const summary=lines.join('\n');
-  try{if(navigator.share)await navigator.share({title:'Our Love Math reflection',text:summary});else{await navigator.clipboard.writeText(summary);toast('Summary copied ♥');}}
-  catch(e){if(e.name!=='AbortError')toast('Sharing unavailable in this browser.');}
-});
-$('him-save').addEventListener('click',()=>{saveHim();toast('His reflection saved on this device ♥');});
-$('him-share').addEventListener('click',async()=>{
-  const lines=['LOVE MATH — HIS EDITION', 'Name: '+(himData.name||'Not provided'), 'Readiness checks: '+Object.values(himData.checks||{}).filter(Boolean).length+'/'+HIM_GROUPS.reduce((n,g)=>n+g.items.length,0)];
-  HIM_QUESTIONS.forEach((q,i)=>lines.push((i+1)+'. '+q+'\n'+(himData.answers?.[i]||'')));
-  const report=lines.join('\n');
-  try{if(navigator.share)await navigator.share({title:'My Love Math reflection',text:report});else{await navigator.clipboard.writeText(report);toast('Reflection copied — send it to yourself ♥');}}
-  catch(e){if(e.name!=='AbortError')toast('Sharing unavailable in this browser.');}
-});
-himData=safeLoad('lm_him_edition');
-ourData=safeLoad('lm_our_edition');ourData.a=ourData.a||{};ourData.b=ourData.b||{};
-buildHim();updateOurNames();renderOur();
-
 </script>
 <meta name="description" content="Use real math — the Drake equation, the 37% rule, and relationship science — to find out how many potential partners are out there, when to commit, and who's actually The One.">
 <meta property="og:title" content="Love Math — The Romance Calculator">
@@ -940,6 +527,11 @@ footer .fine{margin-top:8px;font-size:12px}
   <div class="card">
     <h2 style="font-size:24px">A final reality check</h2>
     <p class="lede">Attraction can be real while compatibility is still unknown. Ask yourself:</p>
+    <div class="reflection-q">
+      <label for="hc-pattern">When he reaches out, what does he usually need?</label>
+      <p class="hint">Is it emotional support, advice or listening; physical intimacy; financial or professional help; or does he disappear and resurface when he wants something?</p>
+      <textarea id="hc-pattern" placeholder="Describe the pattern you have actually observed..."></textarea>
+    </div>
     <div class="reflection-q">
       <label for="hc-evidence">What have they consistently shown me through their actions?</label>
       <textarea id="hc-evidence" placeholder="Write what you have observed, not what you imagine..."></textarea>
@@ -1469,6 +1061,433 @@ $('roster-share').addEventListener('click',()=>{
 renderDbs();
 renderDbChecklist();
 renderRoster();
+</script>
+<script>
+const $ = id => document.getElementById(id);
+function toast(msg){
+  const t = $('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+/* ================= TAB 4: HEALTHY DATING CHECKLIST ================= */
+const HC_GROUPS = [
+  {title:'A. Emotional availability',items:[
+    'He makes an effort to know me beyond physical attraction.',
+    'He asks about my life, thoughts, ambitions and feelings.',
+    'He can express his own emotions without shutting down.',
+    'He is comfortable having difficult conversations.',
+    'I do not have to guess where I stand.',
+    'He shows genuine interest even when he does not need anything from me.',
+    'He is willing to make emotional space for me, even when the conversation is not convenient.'
+  ]},
+  {title:'B. Consistency and communication',items:[
+    'His words and actions align.',
+    'He initiates conversations, not just responds.',
+    'He communicates when busy rather than disappearing.',
+    'He follows through on plans.',
+    'I do not feel like I am chasing his attention.',
+    'Communication feels natural and reasonably mutual.',
+    'If plans change or he cannot make it, he communicates clearly and respectfully.'
+  ]},
+  {title:'C. Relationship intentions',items:[
+    'We want compatible things from a relationship.',
+    'We have discussed exclusivity and expectations when appropriate.',
+    'He is interested in building something, not just enjoying the benefits.',
+    'He understands that marriage is a journey, not a sales pitch.',
+    'He respects my pace and boundaries.',
+    'His intentions are demonstrated through behaviour.',
+    'He is clear about whether he is dating casually, exclusively, or with a view to marriage.'
+  ]},
+  {title:'D. Compatibility and lifestyle',items:[
+    'We can have intellectually stimulating conversations.',
+    'We share compatible values.',
+    'We have compatible approaches to money and financial responsibility.',
+    'We have similar expectations around family and marriage.',
+    'He respects my career, independence and ambitions.',
+    'We can have fun without everything being serious.',
+    'I can imagine doing ordinary, everyday life with him.'
+  ]},
+  {title:'E. How I feel around him',items:[
+    'I feel safe being myself.',
+    'I feel respected, not evaluated.',
+    'I can disagree without fearing his reaction.',
+    'I feel appreciated, not merely useful.',
+    'I do not feel anxious waiting for his messages.',
+    'I can be vulnerable without feeling exposed or foolish.',
+    'I like who I become when I am around him.'
+  ]}
+];
+const HC_RULES = [
+  'I will not audition for someone’s affection.',
+  'I will not confuse chemistry with compatibility.',
+  'I will not over-invest in someone whose effort is inconsistent.',
+  'I will not become someone’s therapist, parent, project manager or financial safety net.',
+  'I will communicate my needs rather than expect mind-reading.',
+  'I will allow people to reveal themselves over time.',
+  'I will not abandon my routines, friendships, work or personal growth to accommodate dating.',
+  'I will remain open to love without ignoring red flags.',
+  'I will not rush commitment simply because someone says they want marriage.',
+  'I will remember that I am also choosing.'
+];
+const HC_QUESTIONS = [
+  'Was I seen? Did he show curiosity about who I am?',
+  'Was I comfortable? Could I be myself without performing?',
+  'Was there reciprocity? Was the interest mutual?',
+  'Was I attracted to him, or attracted to the attention?',
+  'Would I want another date if I knew he would not change one thing about himself?'
+];
+const hcStoreKey = name => 'lm_healthy_' + (name.trim().toLowerCase() || 'unnamed');
+let hcCurrentKey = hcStoreKey('');
+let hcData = {};
+function hcRead(){
+  try { hcData = JSON.parse(localStorage.getItem(hcCurrentKey)) || {}; }
+  catch(e){ hcData = {}; }
+}
+function hcWrite(){
+  try { localStorage.setItem(hcCurrentKey, JSON.stringify(hcData)); }
+  catch(e){ toast('Could not save on this device.'); }
+}
+function hcBuildChecklist(){
+  const root = $('hc-checklist');
+  root.innerHTML = '';
+  let index = 0;
+  HC_GROUPS.forEach((group, gi) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'check-group';
+    const heading = document.createElement('h3');
+    heading.textContent = group.title;
+    wrap.appendChild(heading);
+    group.items.forEach((item, ii) => {
+      const row = document.createElement('div');
+      row.className = 'check-item';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = 'hc-item-' + index;
+      const itemIndex = index;
+      input.dataset.index = itemIndex;
+      input.checked = !!(hcData.checks && hcData.checks[itemIndex]);
+      const label = document.createElement('label');
+      label.htmlFor = input.id;
+      label.textContent = item;
+      input.addEventListener('change', () => {
+        hcData.checks = hcData.checks || {};
+        hcData.checks[itemIndex] = input.checked;
+        hcWrite(); hcUpdateProgress();
+      });
+      row.append(input, label);
+      wrap.appendChild(row);
+      index++;
+    });
+    root.appendChild(wrap);
+  });
+}
+function hcBuildRules(){
+  const root = $('hc-rules');
+  root.innerHTML = '';
+  HC_RULES.forEach((rule, i) => {
+    const row = document.createElement('div');
+    row.className = 'check-item';
+    const input = document.createElement('input');
+    input.type = 'checkbox'; input.id = 'hc-rule-' + i;
+    input.checked = !(hcData.rules && hcData.rules[i] === false);
+    const label = document.createElement('label');
+    label.htmlFor = input.id; label.textContent = rule;
+    input.addEventListener('change', () => {
+      hcData.rules = hcData.rules || {};
+      hcData.rules[i] = input.checked; hcWrite();
+    });
+    row.append(input, label); root.appendChild(row);
+  });
+}
+function hcBuildQuestions(){
+  const root = $('hc-reflections');
+  root.innerHTML = '';
+  HC_QUESTIONS.forEach((q, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'reflection-q';
+    const label = document.createElement('label');
+    label.htmlFor = 'hc-q-' + i; label.textContent = (i+1)+'. '+q;
+    const area = document.createElement('textarea');
+    area.id = 'hc-q-' + i; area.placeholder = 'Your honest reflection...';
+    area.value = (hcData.answers && hcData.answers[i]) || '';
+    area.addEventListener('input', () => {
+      hcData.answers = hcData.answers || {};
+      hcData.answers[i] = area.value; hcWrite();
+    });
+    wrap.append(label, area); root.appendChild(wrap);
+  });
+}
+function hcUpdateProgress(){
+  const total = HC_GROUPS.reduce((n,g)=>n+g.items.length,0);
+  const done = Object.values(hcData.checks || {}).filter(Boolean).length;
+  $('hc-progress-label').textContent = done + ' / ' + total;
+  $('hc-progress-fill').style.width = (done/total*100) + '%';
+  $('hc-progress-note').textContent = done === total
+    ? 'All observed green flags checked. Keep paying attention to consistency over time.'
+    : done + ' observed so far. Blank means “not known yet”, not “bad”.';
+}
+function hcLoad(){
+  hcCurrentKey = hcStoreKey($('hc-person').value);
+  hcRead(); hcBuildChecklist(); hcBuildRules(); hcBuildQuestions();
+  ['hc-pattern','hc-evidence','hc-concern','hc-next'].forEach(id => {
+    $(id).value = (hcData.notes && hcData.notes[id]) || '';
+    $(id).oninput = () => {
+      hcData.notes = hcData.notes || {};
+      hcData.notes[id] = $(id).value; hcWrite();
+    };
+  });
+  hcUpdateProgress();
+}
+$('hc-person').addEventListener('change', hcLoad);
+$('hc-save').addEventListener('click', () => {
+  hcWrite(); toast('Reflection saved on this device ♥');
+});
+function hcMakeReport(){
+  const name = $('hc-person').value.trim() || 'Unnamed person';
+  const checked = Object.values(hcData.checks || {}).filter(Boolean).length;
+  const total = HC_GROUPS.reduce((n,g)=>n+g.items.length,0);
+  const lines = ['LOVE MATH — HEALTHY DATING REFLECTION', 'Person: '+name, 'Observed green flags: '+checked+'/'+total, ''];
+  let i = 0;
+  HC_GROUPS.forEach(g => {
+    lines.push(g.title);
+    g.items.forEach(item => { lines.push((hcData.checks && hcData.checks[i] ? '[x] ' : '[ ] ') + item); i++; });
+    lines.push('');
+  });
+  lines.push('MY NON-NEGOTIABLES');
+  HC_RULES.forEach((rule,j)=>lines.push((!hcData.rules || hcData.rules[j] !== false ? '[x] ' : '[ ] ')+rule));
+  lines.push('', 'AFTER THE DATE');
+  HC_QUESTIONS.forEach((q,j)=>lines.push((j+1)+'. '+q+'\n'+((hcData.answers && hcData.answers[j])||'')));
+  lines.push('', 'MY NOTES');
+  ['hc-pattern','hc-evidence','hc-concern','hc-next'].forEach(id=>lines.push(id.replace('hc-','')+':\n'+((hcData.notes && hcData.notes[id])||'')));
+  return lines.join('\n');
+}
+$('hc-share').addEventListener('click', async () => {
+  hcWrite();
+  const report = hcMakeReport();
+  if (navigator.share) {
+    try {
+      await navigator.share({title: 'My Love Math dating reflection', text: report});
+      toast('Share sheet opened ♥');
+    } catch(e) {
+      if (e && e.name === 'AbortError') return;
+      try {
+        await navigator.clipboard.writeText(report);
+        toast('Sharing unavailable — notes copied ♥');
+      } catch(err) { toast('Sharing is unavailable in this browser.'); }
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(report);
+      toast('Share unavailable — notes copied. Paste into a message to yourself ♥');
+    } catch(e) { toast('Sharing is unavailable in this browser.'); }
+  }
+});
+$('hc-export').addEventListener('click', () => {
+  const textOut = hcMakeReport();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textOut).then(()=>toast('Notes copied ♥')).catch(()=>toast('Copy unavailable in this browser.'));
+  } else { toast('Copy is unavailable in this browser.'); }
+});
+$('hc-reset').addEventListener('click', () => {
+  if (!confirm('Reset the checklist and reflections for this person?')) return;
+  try { localStorage.removeItem(hcCurrentKey); } catch(e){}
+  hcLoad(); toast('Fresh start ♥');
+});
+hcLoad();
+
+
+/* ================= HEALTHY DATING: HIS + OUR EDITIONS ================= */
+const HIM_GROUPS = [
+  {title:'A. Emotional maturity and availability',items:[
+    'I can identify and communicate what I am feeling.',
+    'I can be vulnerable without treating it as weakness.',
+    'I take responsibility and apologise when I am wrong.',
+    'I can disagree without aggression, contempt or shutting down.',
+    'I do not expect a partner to manage my emotional wellbeing.',
+    'I can offer emotional support, not only seek it.',
+    'I have reflected on lessons from previous relationships.'
+  ]},
+  {title:'B. Integrity and consistency',items:[
+    'My actions match my words.',
+    'I follow through on commitments.',
+    'I am honest even when the conversation is uncomfortable.',
+    'I show care and interest even when I do not need something.',
+    'I respect boundaries and personal space.',
+    'I do not use silence, jealousy or manipulation to control someone.',
+    'I treat people respectfully, including those who cannot benefit me.'
+  ]},
+  {title:'C. Intentionality and commitment',items:[
+    'I know what kind of relationship I want.',
+    'I am emotionally available for the relationship I say I want.',
+    'I can explain what partnership and marriage mean to me.',
+    'I understand that commitment requires ongoing effort.',
+    'I am willing to discuss children, family and the future.',
+    'I do not use promises of marriage to rush intimacy.',
+    'I am willing to build trust progressively.'
+  ]},
+  {title:'D. Responsibility and financial maturity',items:[
+    'I take responsibility for my life and decisions.',
+    'I have a healthy and realistic relationship with money.',
+    'I can be financially transparent when a relationship becomes serious.',
+    'I have realistic goals and work towards them.',
+    'I understand financial partnership and shared responsibilities.',
+    'I do not use money or providing as a way to control.',
+    'I can discuss financial challenges without shame or defensiveness.'
+  ]},
+  {title:'E. Partnership and compatibility',items:[
+    'I respect my partner’s independence and ambitions.',
+    'I see household and family responsibilities as shared.',
+    'I can celebrate my partner’s success without feeling threatened.',
+    'I am willing to compromise and make joint decisions.',
+    'I can maintain healthy family relationships while setting appropriate boundaries.',
+    'I make space for romance, friendship and fun.',
+    'I see partnership as collaboration rather than competition.'
+  ]}
+];
+const HIM_QUESTIONS=[
+  'Am I looking for a partner, or someone to fill a gap in my life?',
+  'Am I emotionally available, or simply lonely?',
+  'Can I offer the consistency, loyalty and effort I expect?',
+  'Have I processed my past relationships without making someone new pay for them?',
+  'Can I support a woman who is ambitious, independent and successful?',
+  'Am I prepared to share decisions, responsibilities and vulnerabilities?',
+  'Would I be proud of how I treat my partner when nobody is watching?'
+];
+const OUR_AREAS=[
+  'What commitment and exclusivity mean to us',
+  'Marriage intentions, timing and expectations',
+  'Children, parenting and family life',
+  'Money, financial habits and shared responsibilities',
+  'Career ambitions, independence and lifestyle',
+  'Communication, disagreement and conflict repair',
+  'Affection, intimacy, boundaries and emotional needs',
+  'Faith, values, culture and community',
+  'Household responsibilities and practical partnership',
+  'How we make important decisions together'
+];
+let himData={};
+let ourData={a:{},b:{}};
+let ourEditing='a';
+function safeLoad(key){try{return JSON.parse(localStorage.getItem(key))||{};}catch(e){return {};}}
+function safeSave(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch(e){toast('Could not save on this device.');}}
+function buildHim(){
+  const root=$('him-checklist'); root.innerHTML='';
+  let idx=0;
+  HIM_GROUPS.forEach(group=>{
+    const wrap=document.createElement('div');wrap.className='check-group';
+    const h=document.createElement('h3');h.textContent=group.title;wrap.appendChild(h);
+    group.items.forEach(item=>{
+      const row=document.createElement('div');row.className='check-item';
+      const input=document.createElement('input');input.type='checkbox';input.id='him-check-'+idx;input.checked=!!himData.checks?.[idx];
+      const label=document.createElement('label');label.htmlFor=input.id;label.textContent=item;
+      input.addEventListener('change',()=>{himData.checks=himData.checks||{};himData.checks[idx]=input.checked;saveHim();updateHimProgress();});
+      row.append(input,label);wrap.appendChild(row);idx++;
+    });
+    root.appendChild(wrap);
+  });
+  const qroot=$('him-questions');qroot.innerHTML='';
+  HIM_QUESTIONS.forEach((q,i)=>{
+    const wrap=document.createElement('div');wrap.className='reflection-q';
+    const label=document.createElement('label');label.htmlFor='him-q-'+i;label.textContent=(i+1)+'. '+q;
+    const area=document.createElement('textarea');area.id='him-q-'+i;area.placeholder='Your honest answer...';area.value=himData.answers?.[i]||'';
+    area.addEventListener('input',()=>{himData.answers=himData.answers||{};himData.answers[i]=area.value;saveHim();});
+    wrap.append(label,area);qroot.appendChild(wrap);
+  });
+  ['him-evidence','him-growth','him-action'].forEach(id=>{
+    $(id).value=himData.notes?.[id]||'';
+    $(id).oninput=()=>{himData.notes=himData.notes||{};himData.notes[id]=$(id).value;saveHim();};
+  });
+  $('him-name').value=himData.name||'';
+  $('him-name').oninput=()=>{himData.name=$('him-name').value;saveHim();};
+  updateHimProgress();
+}
+function saveHim(){safeSave('lm_him_edition',himData);}
+function updateHimProgress(){
+  const total=HIM_GROUPS.reduce((n,g)=>n+g.items.length,0);
+  const count=Object.values(himData.checks||{}).filter(Boolean).length;
+  $('him-progress-label').textContent=count+' / '+total;
+  $('him-progress-fill').style.width=(count/total*100)+'%';
+  $('him-progress-note').textContent=count===total?'All reflections checked. Keep turning insight into consistent action.':count+' of '+total+' statements currently feel true. Blank means there is room to reflect.';
+}
+function renderOur(){
+  const root=$('our-questions');root.innerHTML='';
+  OUR_AREAS.forEach((q,i)=>{
+    const row=document.createElement('div');row.className='couple-row';
+    const title=document.createElement('strong');title.textContent=(i+1)+'. '+q;row.appendChild(title);
+    const grid=document.createElement('div');grid.className='couple-ratings';
+    ['a','b'].forEach(person=>{
+      const wrap=document.createElement('div');
+      const label=document.createElement('label');label.textContent=person==='a'?($('our-name-a').value.trim()||'Person A'):($('our-name-b').value.trim()||'Person B');
+      const select=document.createElement('select');select.setAttribute('aria-label',label.textContent+' rating for '+q);
+      select.innerHTML='<option value="">Not discussed yet</option>'+[1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+(n===1?' — very different':n===5?' — strongly aligned':'')+'</option>').join('');
+      select.value=ourData[person][i]||'';
+      select.disabled=person!==ourEditing;
+      select.addEventListener('change',()=>{ourData[person][i]=select.value;safeSave('lm_our_edition',ourData);});
+      wrap.append(label,select);grid.appendChild(wrap);
+    });
+    row.appendChild(grid);root.appendChild(row);
+  });
+}
+function updateOurNames(){
+  $('our-edit-a').textContent='Answer as '+($('our-name-a').value.trim()||'Person A');
+  $('our-edit-b').textContent='Answer as '+($('our-name-b').value.trim()||'Person B');
+}
+function compareOur(){
+  const root=$('our-alignment');root.innerHTML='';
+  let sum=0,n=0;
+  OUR_AREAS.forEach((area,i)=>{
+    const a=Number(ourData.a[i]),b=Number(ourData.b[i]);
+    const row=document.createElement('div');row.className='alignment-item';
+    const title=document.createElement('strong');title.textContent=area;row.appendChild(title);
+    const detail=document.createElement('div');detail.className='check-note';
+    if(!a||!b){detail.textContent='Not enough information yet — both people need to answer.';}
+    else{
+      const diff=Math.abs(a-b);sum+=diff;n++;
+      detail.textContent=($('our-name-a').value.trim()||'Person A')+': '+a+'/5 · '+($('our-name-b').value.trim()||'Person B')+': '+b+'/5 · '+(diff===0?'Same rating':diff===1?'Close perspectives':'Worth a conversation');
+      const bar=document.createElement('div');bar.className='alignment-bar';const fill=document.createElement('span');fill.style.width=((5-diff)/5*100)+'%';bar.appendChild(fill);row.appendChild(bar);
+    }
+    row.appendChild(detail);root.appendChild(row);
+  });
+  const summary=document.createElement('p');summary.className='factlet';
+  summary.textContent=n?'Compared '+n+' areas. Average rating difference: '+(sum/n).toFixed(1)+' points out of 5. This is a conversation guide, not a compatibility verdict.':'Both people need to rate at least one area before a comparison appears.';
+  root.prepend(summary);$('our-results').hidden=false;
+}
+document.querySelectorAll('[data-edition]').forEach(btn=>btn.addEventListener('click',()=>{
+  const chosen=btn.dataset.edition;
+  document.querySelectorAll('[data-edition]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
+  ['her','him','our'].forEach(id=>$('hc-'+id+'-view').hidden=id!==chosen);
+}));
+document.querySelectorAll('[data-partner]').forEach(btn=>btn.addEventListener('click',()=>{
+  ourEditing=btn.dataset.partner;
+  document.querySelectorAll('[data-partner]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
+  $('our-edit-note').textContent='You are currently entering '+($('our-name-'+ourEditing).value.trim()||('Person '+ourEditing.toUpperCase()))+"'s answers. Give each person privacy to answer honestly.";
+  renderOur();
+}));
+['our-name-a','our-name-b'].forEach(id=>$(id).addEventListener('input',()=>{updateOurNames();renderOur();}));
+$('our-save').addEventListener('click',()=>{safeSave('lm_our_edition',ourData);toast('Both perspectives saved on this device ♥');});
+$('our-compare').addEventListener('click',compareOur);
+$('our-share').addEventListener('click',async()=>{
+  const lines=['LOVE MATH — OUR EDITION','A conversation guide, not a compatibility verdict.'];
+  OUR_AREAS.forEach((q,i)=>lines.push(q+': '+(ourData.a[i]||'Not answered')+' / '+(ourData.b[i]||'Not answered')));
+  const summary=lines.join('\n');
+  try{if(navigator.share)await navigator.share({title:'Our Love Math reflection',text:summary});else{await navigator.clipboard.writeText(summary);toast('Summary copied ♥');}}
+  catch(e){if(e.name!=='AbortError')toast('Sharing unavailable in this browser.');}
+});
+$('him-save').addEventListener('click',()=>{saveHim();toast('His reflection saved on this device ♥');});
+$('him-share').addEventListener('click',async()=>{
+  const lines=['LOVE MATH — HIS EDITION', 'Name: '+(himData.name||'Not provided'), 'Readiness checks: '+Object.values(himData.checks||{}).filter(Boolean).length+'/'+HIM_GROUPS.reduce((n,g)=>n+g.items.length,0)];
+  HIM_QUESTIONS.forEach((q,i)=>lines.push((i+1)+'. '+q+'\n'+(himData.answers?.[i]||'')));
+  const report=lines.join('\n');
+  try{if(navigator.share)await navigator.share({title:'My Love Math reflection',text:report});else{await navigator.clipboard.writeText(report);toast('Reflection copied — send it to yourself ♥');}}
+  catch(e){if(e.name!=='AbortError')toast('Sharing unavailable in this browser.');}
+});
+himData=safeLoad('lm_him_edition');
+ourData=safeLoad('lm_our_edition');ourData.a=ourData.a||{};ourData.b=ourData.b||{};
+buildHim();updateOurNames();renderOur();
+
 </script>
 </body>
 </html>
