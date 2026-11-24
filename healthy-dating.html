@@ -14,6 +14,7 @@
 <div class="card" id="love-notes"><p class="eyebrow">A little wisdom for the journey</p><h2>Love Notes <span style="color:var(--flame)">♥</span></h2><p class="lede love-notes-intro">Original Love Math reminders to help you date with intention, recognise patterns and choose with clarity. Your answers help bring the most relevant note to the top.</p><div id="love-tip" aria-live="polite"></div></div>
 <div class="disclaimer"><h2>Important disclaimer</h2><p>Love Math is an educational and self-reflection tool. It is not a psychological assessment, diagnostic instrument, professional counselling service or scientific predictor of relationship success. Scores and feedback are prompts for reflection, not definitive judgements about another person or a relationship.</p><p>Only assess what you have personally observed. A high score does not guarantee a healthy relationship; a low score or unanswered item does not automatically mean a relationship cannot develop positively. People and relationships are complex.</p><p><strong>Always use your own sound judgement.</strong> Consider your lived experience, personal values, boundaries and circumstances. You remain responsible for your relationship decisions. Seek qualified support where appropriate. If you experience coercion, threats, intimidation, controlling behaviour or abuse, prioritise your safety and seek appropriate help; do not rely on a checklist score.</p></div>
 </main><footer>Made with ♥ and an unreasonable amount of multiplication. <p>Love Math helps you ask better questions. The decisions remain yours.</p></footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 'use strict';
 const HER_GROUPS=[["Emotional availability", ["He makes an effort to know me beyond physical attraction.", "He asks about my life, thoughts, ambitions and feelings.", "He can express his own emotions without shutting down.", "He is willing to have difficult conversations respectfully.", "I have seen him make emotional space for me.", "He responds with care when I share something important.", "I can be myself without feeling I must perform for his approval."]], ["Consistency and communication", ["His actions generally match his words.", "He initiates contact, not only responds.", "He communicates when plans change or he is unavailable.", "He follows through on plans and commitments.", "His interest is steady rather than appearing only when convenient.", "He listens and remembers things that matter to me.", "I can raise a concern without being punished with silence or hostility."]], ["Intentions and commitment", ["He has clearly communicated what kind of relationship he wants.", "His actions are consistent with the intentions he has expressed.", "We have discussed exclusivity if it is relevant to us.", "He is willing to talk about the future at an appropriate pace.", "He does not pressure me to accept a relationship arrangement I do not want.", "He makes time to build the connection, not just enjoy its benefits.", "I have enough evidence to understand whether our relationship goals align."]], ["Compatibility and responsibility", ["Our core values are compatible in ways that matter to me.", "We can discuss money and responsibility maturely when appropriate.", "He respects my work, ambitions and independence.", "We have compatible expectations around family and lifestyle, or can discuss differences.", "He takes responsibility for his choices and mistakes.", "He treats people respectfully, including when there is nothing to gain.", "We can disagree without insults, intimidation or contempt."]], ["How I feel and boundaries", ["I feel emotionally and physically safe around him.", "My boundaries are respected without repeated negotiation.", "Effort and care feel reasonably mutual.", "I do not feel I must chase, persuade or audition for attention.", "I can maintain my friendships, interests and identity.", "I feel more settled than confused by the pattern of this connection.", "I like who I am when I am in this relationship."]]];
@@ -139,27 +140,34 @@ function buildLoveMathShareCard(title){
  return {canvas,text};
 }
 async function shareText(title,text){
- const card=buildLoveMathShareCard(title);
- const filename='love-math-results.png';
- const blob=await new Promise(resolve=>card.canvas.toBlob(resolve,'image/png'));
- if(blob){
+ const isSeek=title.includes('What I Seek');
+ const isBring=title.includes('What I Bring');
+ const reportId=isSeek?'her-result':isBring?'him-result':'our-result';
+ const reportButton=isSeek?'her-report':isBring?'him-report':'our-compare';
+ const report=document.getElementById(reportId);
+ if(report.classList.contains('hidden')) document.getElementById(reportButton).click();
+ await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+ if(typeof window.html2canvas!=='function'){
+  alert('The image exporter could not load. Please try again when you have an internet connection.');
+  return;
+ }
+ try{
+  const canvas=await window.html2canvas(report,{backgroundColor:'#FFF4EE',scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:Math.max(document.documentElement.clientWidth,report.scrollWidth)});
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  if(!blob) throw new Error('Could not create the results image');
+  const filename='love-math-'+(isSeek?'what-i-seek':isBring?'what-i-bring':'what-we-build')+'-results.png';
   const file=new File([blob],filename,{type:'image/png'});
+  const shareTextBody=text+'\\n\\nExplore Love Math: https://anny320.github.io/LoveMath/healthy-dating.html';
   if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-   try{await navigator.share({title,text,files:[file]});return;}
-   catch(e){if(e&&e.name==='AbortError')return;}
+   try{await navigator.share({title,text:shareTextBody,files:[file]});return;}
+   catch(err){if(err&&err.name==='AbortError') return;}
   }
- }
- // Text/link sharing fallback. WhatsApp is opened directly where possible.
- const message=text+'\n\nExplore Love Math: https://anny320.github.io/LoveMath/healthy-dating.html';
- if(navigator.share){
-  try{await navigator.share({title,text:message,url:'https://anny320.github.io/LoveMath/healthy-dating.html'});return;}
-  catch(e){if(e&&e.name==='AbortError')return;}
- }
- const wa='https://wa.me/?text='+encodeURIComponent(message);
- window.open(wa,'_blank','noopener');
- // Also download the graphical card so it can be uploaded to TikTok or attached elsewhere.
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  window.open('https://wa.me/?text='+encodeURIComponent(shareTextBody+'\\n\\nI’m sharing my full Love Math results card as an image.'),'_blank','noopener');
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  alert('Your complete results card has been downloaded as an image. Attach it to WhatsApp, or upload it to TikTok or another app.');
+ }catch(err){console.error('Love Math export failed',err);alert('We could not export the full results card. Please try again.');}
 }
 async function copyText(s){try{await navigator.clipboard.writeText(s);alert('Summary copied.')}catch(e){const t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();alert('Summary copied.')}}
 $('her-copy').addEventListener('click',()=>copyText(summaryHer()));$('her-share').addEventListener('click',()=>shareText('Love Math — What I Seek',summaryHer()));$('him-copy').addEventListener('click',()=>copyText(`LOVE MATH — WHAT I BRING
