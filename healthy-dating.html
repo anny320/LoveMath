@@ -47,28 +47,119 @@ function renderBoundaries(){const root=$('her-boundaries');root.innerHTML='';BOU
 function renderReflections(){const root=$('her-reflections');root.innerHTML='';REFLECTIONS.forEach(([q,opts],i)=>{const d=document.createElement('div');d.className='question';const p=document.createElement('p');p.textContent=q;d.appendChild(p);const h=document.createElement('div');h.innerHTML=choicesHTML('reflect-'+i,herState.reflection?.[i]||'',opts.map((v,j)=>[String(j),v]));h.addEventListener('change',e=>{if(e.target.name==='reflect-'+i){herState.reflection=herState.reflection||{};herState.reflection[i]=e.target.value;save(activeHerKey,herState);renderLoveNotes()}});d.appendChild(h);root.appendChild(d)})}
 function herReport(){const yes=Object.values(herState.checks||{}).filter(x=>x==='yes').length,no=Object.values(herState.checks||{}).filter(x=>x==='no').length,known=yes+no,total=35,unknown=total-known;let stage=known<10?'Early discovery':yes>=24?'Many positive signals observed':yes>=15?'Promising signs with areas to explore':'Still learning what this connection looks like';let advice=no>=4?'Several concerns have been observed. Consider whether they affect your safety, boundaries or core needs; a positive count does not cancel them.':unknown>15?'There is still a lot you do not know. Give yourself time to observe rather than filling gaps with assumptions.':yes>=20?'There are encouraging observations. Continue checking whether they remain consistent over time.':'Use the next conversations and experiences to understand what is working and what needs clarity.';const r=$('her-result');r.classList.remove('hidden');r.innerHTML=`<h3>Your Love Math Reality Check</h3><div class="statrow"><div class="stat"><b>${yes}</b>Positive signals</div><div class="stat"><b>${no}</b>Concerns</div><div class="stat"><b>${unknown}</b>Unknown</div></div><p><strong>${stage}</strong></p><p>${advice}</p><p class="mini">This is a summary of your observations, not a compatibility percentage or prediction. Unknown answers are not negative.</p><h3>Category-by-category view</h3>${HER_GROUPS.map(([title,items],g)=>{const start=g*7,answers=items.map((_,j)=>herState.checks?.[start+j]||'unknown');return `<p><strong>${safe(title)}</strong> — ${answers.filter(x=>x==='yes').length} positive · ${answers.filter(x=>x==='no').length} concerns · ${answers.filter(x=>x==='unknown').length} not yet known</p>`}).join('')}<h3>Your next-date debrief</h3><p>${Object.entries(herState.reflection||{}).map(([i,v])=>safe(REFLECTIONS[Number(i)][0])+': '+safe(REFLECTIONS[Number(i)][1][Number(v)])).join('<br>')||'No debrief answers yet.'}</p><h3>Your chosen non-negotiables</h3><p>${(herState.boundary||[]).map(i=>safe(BOUNDARIES[i])).join(' · ')||'None selected yet.'}</p>`;r.scrollIntoView({behavior:'smooth',block:'nearest'})}
 $('her-report').addEventListener('click',herReport);
-function summaryHer(){return `LOVE MATH — WHAT I SEEK
-Name: ${$('her-name').value.trim()}
-Positive signals: ${Object.values(herState.checks||{}).filter(x=>x==='yes').length}
-Concerns observed: ${Object.values(herState.checks||{}).filter(x=>x==='no').length}
-Not yet known: ${35-Object.values(herState.checks||{}).filter(x=>x==='yes'||x==='no').length}
-Only observed behaviours are counted. This is not a relationship verdict.`}async function shareText(title,text){
- try{
-  if(navigator.share){
-   await navigator.share({title:title,text:text});
-   return;
-  }
-  await copyText(text);
-  alert('Your results have been copied. Paste them into WhatsApp or another app to share.');
- }catch(err){
-  if(err && err.name==='AbortError') return;
-  try{
-   await copyText(text);
-   alert('Your results have been copied. Paste them into WhatsApp or another app to share.');
-  }catch(copyErr){
-   alert('Sharing is unavailable here. Please use the Copy summary button instead.');
+function summaryHer(){
+ const yes=Object.values(herState.checks||{}).filter(x=>x==='yes').length,no=Object.values(herState.checks||{}).filter(x=>x==='no').length,unknown=35-yes-no;
+ return `LOVE MATH — WHAT I SEEK\nName: ${$('her-name').value.trim()}\nPositive signals: ${yes}\nConcerns observed: ${no}\nNot yet known: ${unknown}\n${HER_GROUPS.map((g,i)=>{const a=g[1].map((_,j)=>(herState.checks||{})[i*7+j]||'unknown');return `${g[0]}: ${a.filter(v=>v==='yes').length} positive, ${a.filter(v=>v==='no').length} concerns, ${a.filter(v=>v!=='yes'&&v!=='no').length} not yet known`}).join('\n')}\nOnly observed behaviours count. This is reflection, not a relationship verdict.`;
+}
+function buildLoveMathShareCard(title){
+ const canvas=document.createElement('canvas');
+ canvas.width=1080; canvas.height=1350;
+ const c=canvas.getContext('2d');
+ const ink='#251629', pink='#FF4F79', blush='#FFF4EE', muted='#766b78';
+ c.fillStyle=blush;c.fillRect(0,0,1080,1350);
+ c.fillStyle='#ffffff';c.beginPath();c.roundRect(54,54,972,1242,38);c.fill();
+ c.strokeStyle='#eadde5';c.lineWidth=3;c.stroke();
+ c.fillStyle=pink;c.font='700 28px Arial';c.fillText('LOVE MATH  ♥',96,125);
+ c.fillStyle=ink;c.font='800 58px Arial';c.fillText(title,96,210);
+ c.fillStyle=muted;c.font='28px Arial';c.fillText('A little clarity for the journey',96,260);
+ const drawPill=(x,y,w,label,value,color)=>{
+  c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,150,22);c.fill();
+  c.fillStyle=ink;c.font='700 50px Arial';c.fillText(String(value),x+24,y+68);
+  c.font='22px Arial';c.fillText(label,x+24,y+112);
+ };
+ let y=320, text='', sections=[];
+ const yesCount=o=>Object.values(o||{}).filter(v=>v==='yes').length;
+ const noCount=o=>Object.values(o||{}).filter(v=>v==='no').length;
+ const catRows=(groups,state)=>{
+  return groups.map((g,i)=>{
+   const vals=g[1].map((_,j)=>(state.checks||{})[i*7+j]||'unknown');
+   return {name:g[0],yes:vals.filter(v=>v==='yes').length,no:vals.filter(v=>v==='no').length,unknown:vals.filter(v=>v!=='yes'&&v!=='no').length};
+  });
+ };
+ if(title.includes('What I Seek')){
+  const yes=yesCount(herState.checks),no=noCount(herState.checks),unknown=35-yes-no;
+  const rows=catRows(HER_GROUPS,herState);
+  drawPill(96,y,270,'Positive signals',yes,'#ffe1e9');
+  drawPill(405,y,270,'Concerns observed',no,'#ffe9d7');
+  drawPill(714,y,270,'Not yet known',unknown,'#eee7fa');
+  y+=205;
+  c.fillStyle=ink;c.font='700 30px Arial';c.fillText('YOUR OBSERVATIONS BY CATEGORY',96,y);y+=48;
+  rows.forEach(r=>{
+   c.fillStyle=ink;c.font='700 24px Arial';c.fillText(r.name,96,y);
+   c.fillStyle=muted;c.font='21px Arial';c.fillText(`${r.yes} positive  ·  ${r.no} concerns  ·  ${r.unknown} not yet known`,96,y+32);
+   c.fillStyle='#f0e8ed';c.fillRect(96,y+48,880,12);
+   c.fillStyle=pink;c.fillRect(96,y+48,880*r.yes/7,12);
+   y+=100;
+  });
+  const refl=Object.entries(herState.reflection||{}).map(([i,v])=>`${REFLECTIONS[Number(i)][0]}: ${REFLECTIONS[Number(i)][1][Number(v)]}`);
+  const boundaries=(herState.boundary||[]).map(i=>BOUNDARIES[i]);
+  text=`LOVE MATH — WHAT I SEEK\nName: ${$('her-name').value.trim()}\nPositive signals: ${yes}\nConcerns observed: ${no}\nNot yet known: ${unknown}\n\n${rows.map(r=>`${r.name}: ${r.yes} positive, ${r.no} concerns, ${r.unknown} unknown`).join('\n')}\n\nAfter-date reflections:\n${refl.join('\n')||'Not completed'}\n\nMy non-negotiables: ${boundaries.join(', ')||'Not selected'}\n\nOnly observed behaviours count. This is reflection, not a relationship verdict.`;
+ }else if(title.includes('What I Bring')){
+  const yes=yesCount(himState.checks),no=noCount(himState.checks),unknown=35-yes-no;
+  const rows=catRows(HIM_GROUPS,himState);
+  drawPill(96,y,270,'Practised strengths',yes,'#e4f4e9');
+  drawPill(405,y,270,'Growth areas',no,'#ffe9d7');
+  drawPill(714,y,270,'Still developing',unknown,'#eee7fa');
+  y+=205;
+  c.fillStyle=ink;c.font='700 30px Arial';c.fillText('YOUR SELF-REFLECTION BY CATEGORY',96,y);y+=48;
+  rows.forEach(r=>{
+   c.fillStyle=ink;c.font='700 24px Arial';c.fillText(r.name,96,y);
+   c.fillStyle=muted;c.font='21px Arial';c.fillText(`${r.yes} demonstrated  ·  ${r.no} growth areas  ·  ${r.unknown} not yet established`,96,y+32);
+   c.fillStyle='#f0e8ed';c.fillRect(96,y+48,880,12);
+   c.fillStyle='#8d70c8';c.fillRect(96,y+48,880*r.yes/7,12);
+   y+=100;
+  });
+  text=`LOVE MATH — WHAT I BRING\nName: ${$('him-name').value.trim()}\nPractised strengths: ${yes}\nGrowth areas identified: ${no}\nStill developing / not yet established: ${unknown}\n\n${rows.map(r=>`${r.name}: ${r.yes} demonstrated, ${r.no} growth areas, ${r.unknown} not yet established`).join('\n')}\n\nThis is a self-reflection, not a measure of worth or a prediction of relationship success.`;
+ }else{
+  const labels=['','Strongly disagree','Disagree','Mixed / unsure','Agree','Strongly agree'];
+  let aligned=0,different=0,unknown=0;
+  const rows=OUR_AREAS.map((q,i)=>{
+   const a=Number(ourState.a[i]||0),b=Number(ourState.b[i]||0);
+   if(!a||!b)unknown++;else if(a===b)aligned++;else different++;
+   return {q,a,b,status:!a||!b?'Not established':a===b?'Aligned':'Different perspectives'};
+  });
+  drawPill(96,y,270,'Aligned',aligned,'#e4f4e9');
+  drawPill(405,y,270,'Different views',different,'#ffe9d7');
+  drawPill(714,y,270,'Not established',unknown,'#eee7fa');
+  y+=205;
+  c.fillStyle=ink;c.font='700 30px Arial';c.fillText('YOUR SHARED CONVERSATIONS',96,y);y+=48;
+  rows.forEach(r=>{
+   c.fillStyle=ink;c.font='700 21px Arial';
+   const line=r.q.length>58?r.q.slice(0,55)+'…':r.q;
+   c.fillText(line,96,y);
+   c.fillStyle=muted;c.font='19px Arial';c.fillText(r.status,96,y+30);
+   y+=78;
+  });
+  text=`LOVE MATH — WHAT WE BUILD\n${$('our-a-name').value.trim()} and ${$('our-b-name').value.trim()}\n${aligned} aligned · ${different} different perspectives · ${unknown} not established\n\n${rows.map(r=>`${r.q}\n${$('our-a-name').value}: ${labels[r.a]||'Not answered'} | ${$('our-b-name').value}: ${labels[r.b]||'Not answered'} — ${r.status}`).join('\n\n')}\n\nDifferent answers are conversation starters, not automatic red flags.`;
+ }
+ // Brand footer and gentle interpretation reminder.
+ c.fillStyle=pink;c.fillRect(96,1190,888,4);
+ c.fillStyle=ink;c.font='700 25px Arial';c.fillText('Seek wisely. Bring your best. Build intentionally.',96,1245);
+ c.fillStyle=muted;c.font='18px Arial';c.fillText('Explore: anny320.github.io/LoveMath/healthy-dating.html',96,1280);
+ return {canvas,text};
+}
+async function shareText(title,text){
+ const card=buildLoveMathShareCard(title);
+ const filename='love-math-results.png';
+ const blob=await new Promise(resolve=>card.canvas.toBlob(resolve,'image/png'));
+ if(blob){
+  const file=new File([blob],filename,{type:'image/png'});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+   try{await navigator.share({title,text,files:[file]});return;}
+   catch(e){if(e&&e.name==='AbortError')return;}
   }
  }
+ // Text/link sharing fallback. WhatsApp is opened directly where possible.
+ const message=text+'\n\nExplore Love Math: https://anny320.github.io/LoveMath/healthy-dating.html';
+ if(navigator.share){
+  try{await navigator.share({title,text:message,url:'https://anny320.github.io/LoveMath/healthy-dating.html'});return;}
+  catch(e){if(e&&e.name==='AbortError')return;}
+ }
+ const wa='https://wa.me/?text='+encodeURIComponent(message);
+ window.open(wa,'_blank','noopener');
+ // Also download the graphical card so it can be uploaded to TikTok or attached elsewhere.
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1500);
 }
 async function copyText(s){try{await navigator.clipboard.writeText(s);alert('Summary copied.')}catch(e){const t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();alert('Summary copied.')}}
 $('her-copy').addEventListener('click',()=>copyText(summaryHer()));$('her-share').addEventListener('click',()=>shareText('Love Math — What I Seek',summaryHer()));$('him-copy').addEventListener('click',()=>copyText(`LOVE MATH — WHAT I BRING
@@ -80,12 +171,7 @@ function summaryHim(){
  const yes=Object.values(himState.checks||{}).filter(x=>x==='yes').length;
  const no=Object.values(himState.checks||{}).filter(x=>x==='no').length;
  const unknown=35-yes-no;
- return `LOVE MATH — WHAT I BRING
-Name: ${$('him-name').value.trim()}
-Practised strengths: ${yes}
-Growth areas identified: ${no}
-Still developing / not yet observed: ${unknown}
-This is a self-reflection, not a measure of worth or a prediction of relationship success.`;
+ return `LOVE MATH — WHAT I BRING\nName: ${$('him-name').value.trim()}\nPractised strengths: ${yes}\nGrowth areas identified: ${no}\nStill developing / not yet established: ${unknown}\n${HIM_GROUPS.map((g,i)=>{const a=g[1].map((_,j)=>(himState.checks||{})[i*7+j]||'unknown');return `${g[0]}: ${a.filter(v=>v==='yes').length} demonstrated, ${a.filter(v=>v==='no').length} growth areas, ${a.filter(v=>v!=='yes'&&v!=='no').length} not yet established`}).join('\n')}\nThis is a self-reflection, not a measure of worth or a prediction of relationship success.`;
 }
 $('him-share').addEventListener('click',()=>shareText('Love Math — What I Bring',summaryHim()));
 $('her-reset').addEventListener('click',()=>{if(confirm('Reset the saved checklist for '+$('her-name').value+'?')){localStorage.removeItem(activeHerKey);herState={checks:{},boundary:[],reflection:{}};renderChecklist('her',HER_GROUPS,herState.checks,'her-checks');renderBoundaries();renderReflections();$('her-result').classList.add('hidden')}});
