@@ -46,19 +46,60 @@ function showNameGate(kind){const name=$(kind+'-name').value.trim();const valid=
 $('her-name').addEventListener('input',()=>showNameGate('her'));$('him-name').addEventListener('input',()=>showNameGate('him'));
 function renderBoundaries(){const root=$('her-boundaries');root.innerHTML='';BOUNDARIES.forEach((b,i)=>{const l=document.createElement('label');l.className='choice';l.style.margin='4px';l.innerHTML=`<input type="checkbox" value="${i}" ${(herState.boundary||[]).includes(i)?'checked':''}><span>${safe(b)}</span>`;l.querySelector('input').addEventListener('change',e=>{let a=herState.boundary||[];if(e.target.checked&&a.length>=5){e.target.checked=false;return}herState.boundary=e.target.checked?[...a,i]:a.filter(x=>x!==i);save(activeHerKey,herState);$('boundary-count').textContent=herState.boundary.length+' of 5 selected'});root.appendChild(l)});$('boundary-count').textContent=(herState.boundary||[]).length+' of 5 selected'}
 function renderReflections(){const root=$('her-reflections');root.innerHTML='';REFLECTIONS.forEach(([q,opts],i)=>{const d=document.createElement('div');d.className='question';const p=document.createElement('p');p.textContent=q;d.appendChild(p);const h=document.createElement('div');h.innerHTML=choicesHTML('reflect-'+i,herState.reflection?.[i]||'',opts.map((v,j)=>[String(j),v]));h.addEventListener('change',e=>{if(e.target.name==='reflect-'+i){herState.reflection=herState.reflection||{};herState.reflection[i]=e.target.value;save(activeHerKey,herState);renderLoveNotes()}});d.appendChild(h);root.appendChild(d)})}
-function herReport(){const yes=Object.values(herState.checks||{}).filter(x=>x==='yes').length,no=Object.values(herState.checks||{}).filter(x=>x==='no').length,known=yes+no,total=35,unknown=total-known;let stage=known<10?'Early discovery':yes>=24?'Many positive signals observed':yes>=15?'Promising signs with areas to explore':'Still learning what this connection looks like';let advice=no>=4?'Several concerns have been observed. Consider whether they affect your safety, boundaries or core needs; a positive count does not cancel them.':unknown>15?'There is still a lot you do not know. Give yourself time to observe rather than filling gaps with assumptions.':yes>=20?'There are encouraging observations. Continue checking whether they remain consistent over time.':'Use the next conversations and experiences to understand what is working and what needs clarity.';const r=$('her-result');r.classList.remove('hidden');r.innerHTML=`<h3>Your Love Math Reality Check</h3><div class="statrow"><div class="stat"><b>${yes}</b>Positive signals</div><div class="stat"><b>${no}</b>Concerns</div><div class="stat"><b>${unknown}</b>Unknown</div></div><p><strong>${stage}</strong></p><p>${advice}</p><p class="mini">This is a summary of your observations, not a compatibility percentage or prediction. Unknown answers are not negative.</p><h3>Category-by-category view</h3>${HER_GROUPS.map(([title,items],g)=>{const start=g*7,answers=items.map((_,j)=>herState.checks?.[start+j]||'unknown');return `<p><strong>${safe(title)}</strong> — ${answers.filter(x=>x==='yes').length} positive · ${answers.filter(x=>x==='no').length} concerns · ${answers.filter(x=>x==='unknown').length} not yet known</p>`}).join('')}<h3>Your next-date debrief</h3><p>${Object.entries(herState.reflection||{}).map(([i,v])=>safe(REFLECTIONS[Number(i)][0])+': '+safe(REFLECTIONS[Number(i)][1][Number(v)])).join('<br>')||'No debrief answers yet.'}</p><h3>Your chosen non-negotiables</h3><p>${(herState.boundary||[]).map(i=>safe(BOUNDARIES[i])).join(' · ')||'None selected yet.'}</p>`;r.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function loveMathCategoryInsight(rows,kind){
+ const positiveKey=kind==='seek'?'yes':'yes';
+ const concernKey='no';
+ const strongest=[...rows].sort((a,b)=>b[positiveKey]-a[positiveKey])[0];
+ const concern=[...rows].sort((a,b)=>b[concernKey]-a[concernKey])[0];
+ const hasEvidence=rows.some(r=>r.yes>0||r.no>0);
+ if(!hasEvidence) return 'You have not recorded enough observations yet. Keep the questions open and let experience—not assumptions—shape your view.';
+ const strongestText=strongest&&strongest.yes>0
+  ? `Your strongest observed area is ${strongest.name.toLowerCase()} (${strongest.yes} positive ${kind==='seek'?'signals':'practices'}).`
+  : 'No category has enough positive observations to identify a clear strength yet.';
+ const concernText=concern&&concern.no>0
+  ? `Your biggest area to explore is ${concern.name.toLowerCase()} (${concern.no} ${kind==='seek'?'concerns':'growth areas'}).`
+  : 'You have not recorded a concentrated concern in any one category.';
+ const next=kind==='seek'
+  ? 'Consider a calm conversation about what you are both looking for, then observe whether actions match the conversation.'
+  : 'Choose one practical behaviour in this area to work on consistently, and invite honest feedback where appropriate.';
+ return `${strongestText} ${concernText} ${next}`;
+}
+function categoryRows(groups,state){
+ return groups.map((g,i)=>{
+  const vals=g[1].map((_,j)=>(state.checks||{})[i*7+j]||'unknown');
+  return {name:g[0],yes:vals.filter(v=>v==='yes').length,no:vals.filter(v=>v==='no').length,unknown:vals.filter(v=>v!=='yes'&&v!=='no').length};
+ });
+}
+function herReport(){
+ const yes=Object.values(herState.checks||{}).filter(x=>x==='yes').length;
+ const no=Object.values(herState.checks||{}).filter(x=>x==='no').length;
+ const unknown=35-yes-no;
+ const rows=categoryRows(HER_GROUPS,herState);
+ const stage=(yes+no)<10?'Early discovery':yes>=24?'Many positive signals observed':yes>=15?'Promising signs with areas to explore':'Still learning what this connection looks like';
+ const advice=no>=4?'Several concerns have been observed. Consider whether they affect your safety, boundaries or core needs; a positive count does not cancel them.':unknown>15?'There is still a lot you do not know. Give yourself time to observe rather than filling gaps with assumptions.':yes>=20?'There are encouraging observations. Continue checking whether they remain consistent over time.':'Use the next conversations and experiences to understand what is working and what needs clarity.';
+ const insight=loveMathCategoryInsight(rows,'seek');
+ const r=$('her-result');r.classList.remove('hidden');
+ r.innerHTML=`<h3>Your Love Math Reality Check</h3><div class="statrow"><div class="stat"><b>${yes}</b>Positive signals</div><div class="stat"><b>${no}</b>Concerns</div><div class="stat"><b>${unknown}</b>Unknown</div></div><p><strong>${stage}</strong></p><p>${advice}</p><p class="mini">This is a summary of your observations, not a compatibility percentage or prediction. Unknown answers are not negative.</p><h3>Category-by-category view</h3>${rows.map(row=>`<p><strong>${safe(row.name)}</strong> — ${row.yes} positive · ${row.no} concerns · ${row.unknown} not yet known</p>`).join('')}<h3>Your personalised insight</h3><p>${safe(insight)}</p><h3>Your next-date debrief</h3><p>${Object.entries(herState.reflection||{}).map(([i,v])=>safe(REFLECTIONS[Number(i)][0])+': '+safe(REFLECTIONS[Number(i)][1][Number(v)])).join('<br>')||'No debrief answers yet.'}</p><h3>Your chosen non-negotiables</h3><p>${(herState.boundary||[]).map(i=>safe(BOUNDARIES[i])).join(' · ')||'None selected yet.'}</p>`;
+ r.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 $('her-report').addEventListener('click',herReport);
 function summaryHer(){
- const yes=Object.values(herState.checks||{}).filter(x=>x==='yes').length,no=Object.values(herState.checks||{}).filter(x=>x==='no').length,unknown=35-yes-no;
- return `LOVE MATH — WHAT I SEEK\nName: ${$('her-name').value.trim()}\nPositive signals: ${yes}\nConcerns observed: ${no}\nNot yet known: ${unknown}\n${HER_GROUPS.map((g,i)=>{const a=g[1].map((_,j)=>(herState.checks||{})[i*7+j]||'unknown');return `${g[0]}: ${a.filter(v=>v==='yes').length} positive, ${a.filter(v=>v==='no').length} concerns, ${a.filter(v=>v!=='yes'&&v!=='no').length} not yet known`}).join('\n')}\nOnly observed behaviours count. This is reflection, not a relationship verdict.`;
+ const rows=categoryRows(HER_GROUPS,herState);
+ const yes=rows.reduce((n,r)=>n+r.yes,0),no=rows.reduce((n,r)=>n+r.no,0),unknown=35-yes-no;
+ return `LOVE MATH — WHAT I SEEK\nName: ${$('her-name').value.trim()}\nPositive signals: ${yes}\nConcerns observed: ${no}\nNot yet known: ${unknown}\n${rows.map(r=>`${r.name}: ${r.yes} positive, ${r.no} concerns, ${r.unknown} not yet known`).join('\n')}\n\nYOUR PERSONALISED INSIGHT\n${loveMathCategoryInsight(rows,'seek')}\n\nOnly observed behaviours count. This is reflection, not a relationship verdict.`;
+}
+function wrapCanvasText(ctx,text,maxWidth){
+ const words=text.split(/\s+/);const lines=[];let line='';
+ words.forEach(word=>{const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word;}else line=test;});
+ if(line)lines.push(line);return lines;
 }
 function buildLoveMathShareCard(title){
  const canvas=document.createElement('canvas');
- canvas.width=1080; canvas.height=1350;
+ canvas.width=1080; canvas.height=1500;
  const c=canvas.getContext('2d');
  const ink='#251629', pink='#FF4F79', blush='#FFF4EE', muted='#766b78';
  c.fillStyle=blush;c.fillRect(0,0,1080,1350);
- c.fillStyle='#ffffff';c.beginPath();c.roundRect(54,54,972,1242,38);c.fill();
+ c.fillStyle='#ffffff';c.beginPath();c.roundRect(54,54,972,1392,38);c.fill();
  c.strokeStyle='#eadde5';c.lineWidth=3;c.stroke();
  c.fillStyle=pink;c.font='700 28px Arial';c.fillText('LOVE MATH  ♥',96,125);
  c.fillStyle=ink;c.font='800 58px Arial';c.fillText(title,96,210);
@@ -92,6 +133,11 @@ function buildLoveMathShareCard(title){
    c.fillStyle=pink;c.fillRect(96,y+48,880*r.yes/7,12);
    y+=100;
   });
+  const insight=loveMathCategoryInsight(rows,'seek');
+  c.fillStyle=ink;c.font='700 26px Arial';c.fillText('YOUR PERSONALised INSIGHT'.toUpperCase(),96,y+5);
+  c.fillStyle=muted;c.font='21px Arial';
+  const insightLines=wrapCanvasText(c,insight,880);
+  insightLines.forEach((line,i)=>c.fillText(line,96,y+42+i*30));
   const refl=Object.entries(herState.reflection||{}).map(([i,v])=>`${REFLECTIONS[Number(i)][0]}: ${REFLECTIONS[Number(i)][1][Number(v)]}`);
   const boundaries=(herState.boundary||[]).map(i=>BOUNDARIES[i]);
   text=`LOVE MATH — WHAT I SEEK\nName: ${$('her-name').value.trim()}\nPositive signals: ${yes}\nConcerns observed: ${no}\nNot yet known: ${unknown}\n\n${rows.map(r=>`${r.name}: ${r.yes} positive, ${r.no} concerns, ${r.unknown} unknown`).join('\n')}\n\nAfter-date reflections:\n${refl.join('\n')||'Not completed'}\n\nMy non-negotiables: ${boundaries.join(', ')||'Not selected'}\n\nOnly observed behaviours count. This is reflection, not a relationship verdict.`;
@@ -110,6 +156,9 @@ function buildLoveMathShareCard(title){
    c.fillStyle='#8d70c8';c.fillRect(96,y+48,880*r.yes/7,12);
    y+=100;
   });
+  const insight=loveMathCategoryInsight(rows,'bring');
+  c.fillStyle=ink;c.font='700 26px Arial';c.fillText('YOUR PERSONALISED INSIGHT',96,y+5);
+  c.fillStyle=muted;c.font='21px Arial';wrapCanvasText(c,insight,880).forEach((line,i)=>c.fillText(line,96,y+42+i*30));
   text=`LOVE MATH — WHAT I BRING\nName: ${$('him-name').value.trim()}\nPractised strengths: ${yes}\nGrowth areas identified: ${no}\nStill developing / not yet established: ${unknown}\n\n${rows.map(r=>`${r.name}: ${r.yes} demonstrated, ${r.no} growth areas, ${r.unknown} not yet established`).join('\n')}\n\nThis is a self-reflection, not a measure of worth or a prediction of relationship success.`;
  }else{
   const labels=['','Strongly disagree','Disagree','Mixed / unsure','Agree','Strongly agree'];
@@ -134,9 +183,9 @@ function buildLoveMathShareCard(title){
   text=`LOVE MATH — WHAT WE BUILD\n${$('our-a-name').value.trim()} and ${$('our-b-name').value.trim()}\n${aligned} aligned · ${different} different perspectives · ${unknown} not established\n\n${rows.map(r=>`${r.q}\n${$('our-a-name').value}: ${labels[r.a]||'Not answered'} | ${$('our-b-name').value}: ${labels[r.b]||'Not answered'} — ${r.status}`).join('\n\n')}\n\nDifferent answers are conversation starters, not automatic red flags.`;
  }
  // Brand footer and gentle interpretation reminder.
- c.fillStyle=pink;c.fillRect(96,1190,888,4);
- c.fillStyle=ink;c.font='700 25px Arial';c.fillText('Seek wisely. Bring your best. Build intentionally.',96,1245);
- c.fillStyle=muted;c.font='18px Arial';c.fillText('Explore: anny320.github.io/LoveMath/healthy-dating.html',96,1280);
+ c.fillStyle=pink;c.fillRect(96,1340,888,4);
+ c.fillStyle=ink;c.font='700 25px Arial';c.fillText('Seek wisely. Bring your best. Build intentionally.',96,1395);
+ c.fillStyle=muted;c.font='18px Arial';c.fillText('Explore: anny320.github.io/LoveMath/healthy-dating.html',96,1430);
  return {canvas,text};
 }
 async function shareText(title,text){
@@ -183,7 +232,16 @@ function summaryHim(){
 }
 $('him-share').addEventListener('click',()=>shareText('Love Math — What I Bring',summaryHim()));
 $('her-reset').addEventListener('click',()=>{if(confirm('Reset the saved checklist for '+$('her-name').value+'?')){localStorage.removeItem(activeHerKey);herState={checks:{},boundary:[],reflection:{}};renderChecklist('her',HER_GROUPS,herState.checks,'her-checks');renderBoundaries();renderReflections();$('her-result').classList.add('hidden')}});
-$('him-report').addEventListener('click',()=>{const yes=Object.values(himState.checks||{}).filter(x=>x==='yes').length,no=Object.values(himState.checks||{}).filter(x=>x==='no').length,unknown=35-yes-no;const r=$('him-result');r.classList.remove('hidden');r.innerHTML=`<h3>Your readiness reflection</h3><div class="statrow"><div class="stat"><b>${yes}</b>Practised strengths</div><div class="stat"><b>${no}</b>Growth areas</div><div class="stat"><b>${unknown}</b>Still developing</div></div><p>${no>5?'You have identified several areas where deliberate practice could strengthen your readiness.':unknown>15?'You may need more experience or intentional practice before drawing conclusions.':'You have identified encouraging practices. Keep demonstrating them consistently.'}</p><p class="mini">This is a self-reflection, not a measure of your worth or a prediction of relationship success.</p>`});
+$('him-report').addEventListener('click',()=>{
+ const yes=Object.values(himState.checks||{}).filter(x=>x==='yes').length;
+ const no=Object.values(himState.checks||{}).filter(x=>x==='no').length;
+ const unknown=35-yes-no;
+ const rows=categoryRows(HIM_GROUPS,himState);
+ const insight=loveMathCategoryInsight(rows,'bring');
+ const r=$('him-result');r.classList.remove('hidden');
+ r.innerHTML=`<h3>Your readiness reflection</h3><div class="statrow"><div class="stat"><b>${yes}</b>Practised strengths</div><div class="stat"><b>${no}</b>Growth areas</div><div class="stat"><b>${unknown}</b>Still developing</div></div><p>${no>5?'You have identified several areas where deliberate practice could strengthen your readiness.':unknown>15?'You may need more experience or intentional practice before drawing conclusions.':'You have identified encouraging practices. Keep demonstrating them consistently.'}</p><h3>Category-by-category view</h3>${rows.map(row=>`<p><strong>${safe(row.name)}</strong> — ${row.yes} demonstrated · ${row.no} growth areas · ${row.unknown} not yet established</p>`).join('')}<h3>Your personalised insight</h3><p>${safe(insight)}</p><p class="mini">This is a self-reflection, not a measure of your worth or a prediction of relationship success.</p>`;
+});
+
 function renderOur(){$('our-questions').innerHTML='';OUR_AREAS.forEach((q,i)=>{const d=document.createElement('div');d.className='question';d.innerHTML=`<p>${i+1}. ${safe(q)}</p><div class="field"><label>${safe($('our-'+person+'-name').value||'Person '+person.toUpperCase())}'s perspective</label><select data-our="${i}"><option value="">Not discussed / not sure</option><option value="1">1 · Strongly disagree</option><option value="2">2 · Disagree</option><option value="3">3 · Mixed / unsure</option><option value="4">4 · Agree</option><option value="5">5 · Strongly agree</option></select></div>`;const sel=d.querySelector('select');sel.value=ourState[person][i]||'';sel.addEventListener('change',()=>{ourState[person][i]=sel.value;save('lm_healthy_our_v2',ourState)});$('our-questions').appendChild(d)});$('edit-a').textContent='Answer as '+($('our-a-name').value||'Person A');$('edit-b').textContent='Answer as '+($('our-b-name').value||'Person B');document.querySelectorAll('[data-person]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.person===person)));$('our-edit-note').textContent='Now answering as '+($('our-'+person+'-name').value||'Person '+person.toUpperCase())+'. Ask the other person to look away until their turn.'}
 document.querySelectorAll('[data-person]').forEach(b=>b.addEventListener('click',()=>{person=b.dataset.person;renderOur()}));['our-a-name','our-b-name'].forEach(id=>$(id).addEventListener('input',()=>{const valid=$('our-a-name').value.trim()&&$('our-b-name').value.trim();$('our-gate').classList.toggle('hidden',!!valid);$('our-content').classList.toggle('hidden',!valid);if(valid)renderOur()}));$('our-compare').addEventListener('click',()=>{renderLoveNotes('building');const root=$('our-result');root.classList.remove('hidden');let aligned=0,diff=0,unknown=0;root.innerHTML='<h3>Our shared perspective</h3>';OUR_AREAS.forEach((q,i)=>{const a=Number(ourState.a[i]),b=Number(ourState.b[i]);const d=document.createElement('div');d.className='alignitem';let status;if(!a||!b){unknown++;status='<span class="pill">Not established</span>'}else if(a===b){aligned++;status='<span class="pill good">Aligned</span>'}else{diff++;status='<span class="pill warn">Different perspectives</span>'}d.innerHTML=`<strong>${safe(q)}</strong><p class="mini">${safe($('our-a-name').value)}: ${a||'Not answered'} / ${safe($('our-b-name').value)}: ${b||'Not answered'}</p>${status}`;root.appendChild(d)});const p=document.createElement('p');p.innerHTML=`<strong>${aligned} aligned · ${diff} different · ${unknown} not established</strong><br><span class="mini">Different answers are conversation starters, not automatic red flags. No combined compatibility score is calculated.</span>`;root.prepend(p)});$('our-copy').addEventListener('click',()=>{let s='LOVE MATH — WHAT WE BUILD\n';OUR_AREAS.forEach((q,i)=>s+=q+'\n'+($('our-a-name').value||'Person A')+': '+(ourState.a[i]||'Not answered')+' | '+($('our-b-name').value||'Person B')+': '+(ourState.b[i]||'Not answered')+'\n');copyText(s)});
 function summaryOur(){
